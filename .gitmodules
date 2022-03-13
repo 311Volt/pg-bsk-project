@@ -7,3 +7,6 @@
 [submodule "digestpp"]
 	path = digestpp
 	url = https://github.com/kerukuro/digestpp.git
+[submodule "rpclib"]
+	path = rpclib
+	url = https://github.com/rpclib/rpclib.git
