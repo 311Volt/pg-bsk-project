@@ -4,3 +4,6 @@
 [submodule "portable8439"]
 	path = portable8439
 	url = https://github.com/DavyLandman/portable8439.git
+[submodule "digestpp"]
+	path = digestpp
+	url = https://github.com/kerukuro/digestpp.git
