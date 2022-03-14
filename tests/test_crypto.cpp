@@ -19,7 +19,7 @@ void testsha256(const char* str) {
 
 void testsha384(const char* str) {
 	uint8_t hash[48];
-	printf(" sha3-256(\"%s\") = \n ", str);
+	printf(" sha3-384(\"%s\") = \n ", str);
 	digest::sha384((const uint8_t*)str, strlen((const char*)str), hash);
 	print(hash, 48);
 	printf("\n");
@@ -69,6 +69,9 @@ int main() {
 	
 	testsha256("");
 	testsha256("test");
+	
+	testsha384("");
+	testsha384("test");
 	
 	testsha512("");
 	testsha512("test");
