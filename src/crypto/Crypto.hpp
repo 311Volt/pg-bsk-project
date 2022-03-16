@@ -5,7 +5,7 @@
 #include <errno.h>
 
 #include "Random.hpp"
-#include <digestpp.hpp>
+#include "../../digestpp/digestpp.hpp"
 
 namespace ec {
 	inline const static int PRIVATE_KEY_SIZE = 32;
@@ -14,13 +14,13 @@ namespace ec {
 	inline const static int HASH_TO_SIGN_SIZE = 32;
 	inline const static int SIGNATURE_SIZE = 64;
 	
-	bool GenKey(uint8_t* privkey32, uint8_t* pubkey33);
-	bool Sign(const uint8_t* privkey32, const uint8_t* hash32, uint8_t* sign64);
-	bool Verify(const uint8_t* pubkey33, const uint8_t* hash32, const uint8_t* sign64);
-	bool Sign(const uint8_t* privkey32, const uint8_t* msg, size_t msglen, uint8_t* sign64);
-	bool Verify(const uint8_t* pubkey33, const uint8_t* msg, size_t msglen, const uint8_t* sign64);
-	bool Ecdh(const uint8_t* myPrivKey32, const uint8_t* theirPubKey33, uint8_t* shared32);
-	bool Ecdhe(const uint8_t* theirPubKey33, uint8_t* myPubKey33, uint8_t* shared32);
+	bool GenKey(void* privkey32, void* pubkey33);
+	bool Sign(const void* privkey32, const void* hash32, void* sign64);
+	bool Verify(const void* pubkey33, const void* hash32, const void* sign64);
+	bool Sign(const void* privkey32, const void* msg, size_t msglen, void* sign64);
+	bool Verify(const void* pubkey33, const void* msg, size_t msglen, const void* sign64);
+	bool Ecdh(const void* myPrivKey32, const void* theirPubKey33, void* shared32);
+	bool Ecdhe(const void* theirPubKey33, void* myPubKey33, void* shared32);
 }
 
 namespace chacha {
@@ -28,27 +28,26 @@ namespace chacha {
 	inline const static int NONCE_SIZE = 12;
 	inline const static int MAC_SIZE = 16;
 	
-	void crypt(const uint8_t* key32, const uint8_t* nonce12,
-			const uint8_t* src, uint8_t* dst, uint32_t length,
+	void crypt(const void* key32, const void* nonce12,
+			const void* src, void* dst, uint32_t length,
 			uint32_t counter);
-	void encrypt(const uint8_t* key32, const uint8_t* nonce12,
-			const uint8_t* plaintext, uint8_t* ciphertextWithTag,
-			uint32_t plaintextLength, const uint8_t* ad, size_t adSize);
-	uint32_t decrypt(const uint8_t* key32, const uint8_t* nonce12,
-			const uint8_t* ciphertextWithTag, uint8_t* decryptedPlaintext,
-			uint32_t ciphertextWithTagSize, uint8_t* ad, size_t adSize);
+	void encrypt(const void* key32, const void* nonce12,
+			const void* plaintext, void* ciphertextWithTag,
+			uint32_t plaintextLength, const void* ad, size_t adSize);
+	uint32_t decrypt(const void* key32, const void* nonce12,
+			const void* ciphertextWithTag, void* decryptedPlaintext,
+			uint32_t ciphertextWithTagSize, void* ad, size_t adSize);
 }
 
 namespace poly {
 	inline const static int KEY_SIZE = 32;
 	inline const static int MAC_SIZE = 16;
 	
-	void poly(const uint8_t key32, const uint8_t* buffer, size_t bytes,
-			uint8_t* mac16);
+	void poly(const void* key32, const void* buffer, size_t bytes,
+			void* mac16);
 }
 
-class digest {
-public:
+namespace digest {
 	template<uint32_t bits>
 	class sha {
 	public:
@@ -56,21 +55,30 @@ public:
 		inline const static int BYTES = bytes;
 		inline const static int BITS = bits;
 		
-		inline sha(const uint8_t* data, size_t size, uint8_t digest[bytes]) :
+		inline sha(const void* data, size_t size, void* digest/*[bytes]*/) :
 			hash(bits) {
 			absorb(data, size).finalize(digest);
 		}
-		inline sha(const uint8_t* data, size_t size) :
+		inline sha(const void* data, size_t size) :
 			hash(bits) {
 			absorb(data, size);
 		}
 		inline sha() : hash(bits) {}
-		inline sha& absorb(const uint8_t* data, size_t size) {
-			hash.absorb(data, size);
+		inline sha& absorb(const void* data, size_t size) {
+			hash.absorb((const uint8_t*)data, size);
 			return *this;
 		}
-		inline void finalize(uint8_t digest[bytes]) const {
-			hash.digest(digest, bytes);
+		template<typename T>
+		inline sha& absorb(T integer) {
+			for(int i=0; i<sizeof(T); ++i)
+				absorb((uint8_t)((integer>>(i<<3))&0xFF));
+			return *this;
+		}
+		inline sha& absorb(uint8_t byte) {
+			return hash.absorb(&byte, 1);
+		}
+		inline void finalize(void* digest/*[bytes]*/) const {
+			hash.digest((uint8_t*)digest, bytes);
 		}
 		
 		digestpp::sha3 hash;
@@ -79,7 +87,7 @@ public:
 	using sha256 = sha<256>;
 	using sha384 = sha<384>;
 	using sha512 = sha<512>;
-};
+}
 
 #endif
 

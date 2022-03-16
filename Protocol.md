@@ -14,7 +14,7 @@ enum ERR_CODE {
     FAILED,
     FAILED_VALIDATION
 };
-enum CIPHER_TYPE {
+enum CIPHER_VARIANT {
     CHACHA20_POLY1305,
     CHACHA20
 };
@@ -30,21 +30,21 @@ struct KexMessage {
 };
 struct Message {
     MSG_TYPE msg_type;  // == MSG
-    CIPHER_TYPE cipher_type;
+    CIPHER_VARIANT cipher_variant;
     uint8_t nonce[12];
     std::vector<uint8_t> encrypted_data;
     uint8_t mac[16]; // optional when using CHACHA20_POLY1305
 };
 struct MessageFileMeta {
     MSG_TYPE msg_type;  // == FILE_META
-    CIPHER_TYPE cipher_type;
+    CIPHER_VARIANT cipher_variant;
     uint8_t nonce[12];
     std::vector<uint8_t> encrypted_meta;    // file name + file length + file sha512
     uint8_t mac[16]; // optional when using CHACHA20_POLY1305
 };
 struct MessageFileBlock {
     MSG_TYPE msg_type;  // == FILE_BLOCK
-    CIPHER_TYPE cipher_type;
+    CIPHER_VARIANT cipher_variant;
     uint8_t nonce[12];
     std::vector<uint8_t> encrypted_block;    // file hash + offset bytes + block
     uint8_t mac[16]; // optional when using CHACHA20_POLY1305

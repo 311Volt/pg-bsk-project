@@ -41,14 +41,17 @@ public:
 Ctx ctx;
 
 namespace ec {
-	bool GenKey(uint8_t* privkey32, uint8_t* pubkey33) {
+	bool GenKey(void* privkey32, void* pubkey33) {
 		do {
 			Random::Fill(privkey32, 32);
-		} while(!secp256k1_ec_seckey_verify(ctx.ctx, privkey32));
+		} while(!secp256k1_ec_seckey_verify(ctx.ctx,
+					(const uint8_t*)privkey32));
 		secp256k1_pubkey pubkey_;
-		int res1 = (1-secp256k1_ec_pubkey_create(ctx.ctx, &pubkey_, privkey32)) << 1;
+		int res1 = (1-secp256k1_ec_pubkey_create(ctx.ctx, &pubkey_,
+					(const uint8_t*)privkey32)) << 1;
 		size_t len=33;
-		int res2 = 1-secp256k1_ec_pubkey_serialize(ctx.ctx, pubkey33, &len, &pubkey_,
+		int res2 = 1-secp256k1_ec_pubkey_serialize(ctx.ctx,
+				(uint8_t*)pubkey33, &len, &pubkey_,
 				SECP256K1_EC_COMPRESSED);
 		if(res1 | res2) {
 			errno = res1 | res2;
@@ -57,13 +60,15 @@ namespace ec {
 		return true;
 	}
 
-	bool Sign(const uint8_t* privkey32, const uint8_t* hash32,
-			uint8_t* sign64) {
+	bool Sign(const void* privkey32, const void* hash32,
+			void* sign64) {
 		uint8_t r[32];
 		Random::Fill(r, 32);
 		secp256k1_keypair keypair;
-		int res = 1-secp256k1_keypair_create(ctx.ctx, &keypair, privkey32);
-		secp256k1_schnorrsig_sign(ctx.ctx, sign64, hash32, &keypair, r);
+		int res = 1-secp256k1_keypair_create(ctx.ctx, &keypair,
+				(const uint8_t*)privkey32);
+		secp256k1_schnorrsig_sign(ctx.ctx, (uint8_t*)sign64,
+				(const uint8_t*)hash32, &keypair, r);
 		memset(&keypair, 0, sizeof(keypair));
 		if(res) {
 			errno = res;
@@ -72,8 +77,8 @@ namespace ec {
 		return true;
 	}
 
-	bool Verify(const uint8_t* pubkey33, const uint8_t* hash32,
-			const uint8_t* sign64) {
+	bool Verify(const void* pubkey33, const void* hash32,
+			const void* sign64) {
 		secp256k1_xonly_pubkey xpubkey;
 		//int res0 = 4;
 
@@ -81,9 +86,11 @@ namespace ec {
 		// 	secp256k1_pubkey pubkey_;
 		// 	res0 = (1-secp256k1_ec_pubkey_parse(ctx.ctx, &pubkey_, pubkey33, 33))<<2;
 		// 	int res1 = (1-secp256k1_xonly_pubkey_from_pubkey(ctx.ctx, &xpubkey, NULL, &pubkey_))<<1;
-		int res1 = (1-secp256k1_xonly_pubkey_parse(ctx.ctx, &xpubkey, pubkey33+1))<<1;
+		int res1 = (1-secp256k1_xonly_pubkey_parse(ctx.ctx, &xpubkey,
+					(const uint8_t*)pubkey33+1))<<1;
 
-		int res2 = 1-secp256k1_schnorrsig_verify(ctx.ctx, sign64, hash32, 32, &xpubkey);
+		int res2 = 1-secp256k1_schnorrsig_verify(ctx.ctx,
+				(const uint8_t*)sign64, (const uint8_t*)hash32, 32, &xpubkey);
 		if(res1 | res2) {
 			errno = res1 | res2;
 			return false;
@@ -91,25 +98,27 @@ namespace ec {
 		return true;
 	}
 	
-	bool Sign(const uint8_t* privkey32, const uint8_t* msg, size_t msglen,
-			uint8_t* sign64) {
+	bool Sign(const void* privkey32, const void* msg, size_t msglen,
+			void* sign64) {
 		uint8_t hash[32];
 		digest::sha256(msg, msglen, hash);
 		return Sign(privkey32, hash, sign64);
 	}
 	
-	bool Verify(const uint8_t* pubkey33, const uint8_t* msg, size_t msglen,
-			const uint8_t* sign64) {
+	bool Verify(const void* pubkey33, const void* msg, size_t msglen,
+			const void* sign64) {
 		uint8_t hash[32];
 		digest::sha256(msg, msglen, hash);
 		return Verify(pubkey33, hash, sign64);
 	}
 
-	bool Ecdh(const uint8_t* myPrivKey32, const uint8_t* theirPubKey33,
-			uint8_t* shared32) {
+	bool Ecdh(const void* myPrivKey32, const void* theirPubKey33,
+			void* shared32) {
 		secp256k1_pubkey pubkey;
-		int res1 = (1-secp256k1_ec_pubkey_parse(ctx.ctx, &pubkey, theirPubKey33, 33))<<1;
-		int res2 = 1-secp256k1_ecdh(ctx.ctx, shared32, &pubkey, myPrivKey32, NULL, NULL);
+		int res1 = (1-secp256k1_ec_pubkey_parse(ctx.ctx, &pubkey,
+					(const uint8_t*)theirPubKey33, 33))<<1;
+		int res2 = 1-secp256k1_ecdh(ctx.ctx, (uint8_t*)shared32, &pubkey,
+				(const uint8_t*)myPrivKey32, NULL, NULL);
 		if(res1 | res2) {
 			errno = res1 | res2;
 			return false;
@@ -117,8 +126,8 @@ namespace ec {
 		return true;
 	}
 
-	bool Ecdhe(const uint8_t* theirPubKey33, uint8_t* myPubKey33,
-			uint8_t* shared32) {
+	bool Ecdhe(const void* theirPubKey33, void* myPubKey33,
+			void* shared32) {
 		uint8_t privkey32[32];
 		bool ret = GenKey(privkey32, myPubKey33);
 		if(ret == false)
@@ -136,24 +145,29 @@ extern "C" {
 }
 
 namespace chacha {
-	void crypt(const uint8_t* key32, const uint8_t* nonce12,
-			const uint8_t* src, uint8_t* dst, uint32_t length,
+	void crypt(const void* key32, const void* nonce12,
+			const void* src, void* dst, uint32_t length,
 			uint32_t counter) {
-		chacha20_xor_stream(dst, src, length, key32, nonce12, counter);
+		chacha20_xor_stream((uint8_t*)dst, (const uint8_t*)src, length,
+				(const uint8_t*)key32, (const uint8_t*)nonce12, counter);
 	}
 	
-	void encrypt(const uint8_t* key32, const uint8_t* nonce12,
-			const uint8_t* plaintext, uint8_t* ciphertextWithTag,
-			uint32_t plaintextLength, const uint8_t* ad, size_t adSize) {
-		portable_chacha20_poly1305_encrypt(ciphertextWithTag, key32, nonce12,
-				ad, adSize, plaintext, plaintextLength);
+	void encrypt(const void* key32, const void* nonce12,
+			const void* plaintext, void* ciphertextWithTag,
+			uint32_t plaintextLength, const void* ad, size_t adSize) {
+		portable_chacha20_poly1305_encrypt((uint8_t*)ciphertextWithTag,
+				(const uint8_t*)key32, (const uint8_t*)nonce12,
+				(const uint8_t*)ad, adSize, (const uint8_t*)plaintext,
+				plaintextLength);
 	}
 	
-	uint32_t decrypt(const uint8_t* key32, const uint8_t* nonce12,
-			const uint8_t* ciphertextWithTag, uint8_t* decryptedPlaintext,
-			uint32_t ciphertextWithTagSize, uint8_t* ad, size_t adSize) {
-		size_t num = portable_chacha20_poly1305_decrypt(decryptedPlaintext, key32,
-				nonce12, ad, adSize, ciphertextWithTag, ciphertextWithTagSize);
+	uint32_t decrypt(const void* key32, const void* nonce12,
+			const void* ciphertextWithTag, void* decryptedPlaintext,
+			uint32_t ciphertextWithTagSize, void* ad, size_t adSize) {
+		size_t num = portable_chacha20_poly1305_decrypt(
+				(uint8_t*)decryptedPlaintext, (const uint8_t*)key32,
+				(const uint8_t*)nonce12, (const uint8_t*)ad, adSize,
+				(const uint8_t*)ciphertextWithTag, ciphertextWithTagSize);
 		if(num == -1)
 			return 0;
 		return num;
@@ -161,12 +175,12 @@ namespace chacha {
 }
 
 namespace poly {
-	void poly(const uint8_t* key32, const uint8_t* buffer, size_t bytes,
-			uint8_t* mac16) {
+	void poly(const void* key32, const void* buffer, size_t bytes,
+			void* mac16) {
 		poly1305_context ctx;
-		poly1305_init(&ctx, key32);
-		poly1305_update(&ctx, buffer, bytes);
-		poly1305_finish(&ctx, mac16);
+		poly1305_init(&ctx, (const uint8_t*)key32);
+		poly1305_update(&ctx, (const uint8_t*)buffer, bytes);
+		poly1305_finish(&ctx, (uint8_t*)mac16);
 	}
 }
 
