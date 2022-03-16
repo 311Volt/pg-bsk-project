@@ -1,6 +1,6 @@
 
 C = gcc
-CFLAGS = -lpthread -Ofast -s -m64 -Irpclib/include -Isrc
+CFLAGS = -lpthread -Ofast -s -m64 -Irpclib/include -Isrc -I"digestpp"
 CXX = g++
 CXXFLAGS = -std=c++17 $(CFLAGS)
 
@@ -14,7 +14,6 @@ test: tests/test_crypto.exe tests/test_rpclib.exe
 
 tests/%.exe: bin/%.o $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
-	./$@
 
 
 bin/%.o: src/crypto/%.c
@@ -31,9 +30,5 @@ $(RPCLIB):
 
 .PHONY: clean
 clean:
-	rm bin/*.o
-	rm *.o
-	rm *.exe
-	rm *.a
-	rm *.so
+	rm bin/*.o *.o *.exe tests/*.exe *.a *.so
 

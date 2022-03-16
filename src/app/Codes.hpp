@@ -1,0 +1,28 @@
+
+#ifndef PG_BSK_PROJECT_CODES_HPP
+#define PG_BSK_PROJECT_CODES_HPP
+
+#include <crypto/Crypto.hpp>
+
+enum MSG_TYPE {
+	KEX_INIT = 0x01,
+	KEX_RESPONSE = 0x02,
+	MSG = 0x03,
+	FILE_META = 0x04,
+	FILE_BLOCK = 0x05,
+	REQUEST_FILE_RESEND = 0x06
+};
+
+enum ERR_CODE {
+	SUCCESS = 0,
+	FAILED = 0x11,
+	FAILED_VALIDATION = 0x12
+};
+
+enum ENCRYPTION_MODE {
+	CHACHA20 = 0x71,
+	CHACHA20_POLY1305 = 0x72
+};
+
+#endif
+

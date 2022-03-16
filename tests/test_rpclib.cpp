@@ -1,6 +1,6 @@
 
-#include "../rpclib/include/rpc/client.h"
-#include "../rpclib/include/rpc/server.h"
+#include <rpc/client.h>
+#include <rpc/server.h>
 
 #include <iostream>
 

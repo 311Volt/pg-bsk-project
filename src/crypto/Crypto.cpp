@@ -170,19 +170,3 @@ namespace poly {
 	}
 }
 
-#include "../../digestpp/digestpp.hpp"
-
-namespace digest {
-	void sha256(const uint8_t* data, size_t size, uint8_t* digest32) {
-		digestpp::sha3(256).absorb(data, size).digest(digest32, 32);
-	}
-	
-	void sha384(const uint8_t* data, size_t size, uint8_t* digest48) {
-		digestpp::sha3(384).absorb(data, size).digest(digest48, 48);
-	}
-	
-	void sha512(const uint8_t* data, size_t size, uint8_t* digest64) {
-		digestpp::sha3(512).absorb(data, size).digest(digest64, 64);
-	}
-}
-
