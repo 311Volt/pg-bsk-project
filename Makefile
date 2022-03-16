@@ -8,11 +8,11 @@ CRYPTO = bin/Crypto.o bin/Random.o bin/CryptoObjects.o
 RPCLIB = rpclib/librpc.a
 OBJECTS = $(CRYPTO) $(RPCLIB)
 
-test/test_crypto.exe: bin/test_crypto.o $(CRPYTO)
-	$(CXX) $(CXXFLAGS) -o $@ $^
-	./$@
+test: tests/test_crypto.exe tests/test_rpclib.exe
+	tests/test_crypto.exe
+	tests/test_rpclib.exe
 
-test/test_rpclib.exe: bin/test_rpclib.o $(RPCLIB)
+tests/%.exe: bin/%.o $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 	./$@
 
@@ -23,7 +23,7 @@ bin/%.o: src/crypto/%.c
 bin/%.o: src/crypto/%.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $^
 
-bin/%.o: test/%.cpp
+bin/%.o: tests/%.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $^
 
 $(RPCLIB):
