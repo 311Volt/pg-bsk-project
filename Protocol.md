@@ -62,4 +62,6 @@ ERR_CODE SendFileMeta(Message);
 ERR_CODE SendFileBlock(Message);
 ```
 
-Jeszcze można dla 'bezpieczeństwa' dodać po odebraniu wiadomości `KexMessage` zaptanie RPC, czy połączyłem się z tym samym który wysyłał prośbę o połączenie. Kex jest przy okazji prośbą o połączenie.
+Jeszcze można dla 'bezpieczeństwa' dodać po odebraniu wiadomości `KexMessage`
+zaptanie RPC, czy połączyłem się z tym samym który wysyłał prośbę o połączenie.
+Kex jest przy okazji prośbą o połączenie.

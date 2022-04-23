@@ -163,7 +163,7 @@ namespace chacha {
 	
 	uint32_t decrypt(const void* key32, const void* nonce12,
 			const void* ciphertextWithTag, void* decryptedPlaintext,
-			uint32_t ciphertextWithTagSize, void* ad, size_t adSize) {
+			uint32_t ciphertextWithTagSize, const void* ad, size_t adSize) {
 		size_t num = portable_chacha20_poly1305_decrypt(
 				(uint8_t*)decryptedPlaintext, (const uint8_t*)key32,
 				(const uint8_t*)nonce12, (const uint8_t*)ad, adSize,

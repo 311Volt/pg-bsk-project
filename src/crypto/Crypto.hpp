@@ -31,12 +31,13 @@ namespace chacha {
 	void crypt(const void* key32, const void* nonce12,
 			const void* src, void* dst, uint32_t length,
 			uint32_t counter);
+	
 	void encrypt(const void* key32, const void* nonce12,
 			const void* plaintext, void* ciphertextWithTag,
 			uint32_t plaintextLength, const void* ad, size_t adSize);
 	uint32_t decrypt(const void* key32, const void* nonce12,
 			const void* ciphertextWithTag, void* decryptedPlaintext,
-			uint32_t ciphertextWithTagSize, void* ad, size_t adSize);
+			uint32_t ciphertextWithTagSize, const void* ad, size_t adSize);
 }
 
 namespace poly {
@@ -75,7 +76,8 @@ namespace digest {
 			return *this;
 		}
 		inline sha& absorb(uint8_t byte) {
-			return hash.absorb(&byte, 1);
+			hash.absorb(&byte, 1);
+			return *this;
 		}
 		inline void finalize(void* digest/*[bytes]*/) const {
 			hash.digest((uint8_t*)digest, bytes);

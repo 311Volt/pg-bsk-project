@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 #include <array>
+#include <queue>
+#include <mutex>
 
 #include "../crypto/Crypto.hpp"
 
@@ -13,63 +15,79 @@
 
 #include "Codes.hpp"
 
+using Array12 = std::array<uint8_t, 12>;
+using Array16 = std::array<uint8_t, 16>;
+using Array32 = std::array<uint8_t, 32>;
+using Array33 = std::array<uint8_t, 33>;
+using Array64 = std::array<uint8_t, 64>;
+
+using EcPublicKey = std::array<uint8_t, ec::PUBLIC_KEY_SIZE>;
+using EcPrivateKey = std::array<uint8_t, ec::PRIVATE_KEY_SIZE>;
+using EcSignature = std::array<uint8_t, ec::SIGNATURE_SIZE>;
+using ChachaNonce = std::array<uint8_t, chacha::NONCE_SIZE>;
+	
+struct KexMessage {
+	ERROR_CODE error_code;
+	EcPublicKey publicKey;
+	EcPublicKey publicEcdheKey;
+	std::string ipaddress;
+	int port;
+	EcSignature signature;
+	
+	void GenerateDigest(Array32& hash);
+	bool Verify();
+	bool Sign(EcPrivateKey& privkey);
+
+	MSGPACK_DEFINE_ARRAY(error_code, publicKey, publicEcdheKey, ipaddress, port, signature);
+};
+
+struct Message {
+    MSG_TYPE msg_type;
+    ENCRYPTION_MODE cipher_variant;
+	ChachaNonce nonce;
+    std::vector<uint8_t> encrypted_data;
+
+	MSGPACK_DEFINE_ARRAY(msg_type, cipher_variant, nonce, encrypted_data);
+};
+
 class AppState {
 public:
-	
-	using Array12 = std::array<uint8_t, 12>;
-	using Array16 = std::array<uint8_t, 16>;
-	using Array32 = std::array<uint8_t, 32>;
-	using Array33 = std::array<uint8_t, 33>;
-	using Array64 = std::array<uint8_t, 64>;
-	
-	using EcPublicKey = std::array<uint8_t, ec::PUBLIC_KEY_SIZE>;
-	using EcPrivateKey = std::array<uint8_t, ec::PRIVATE_KEY_SIZE>;
-	using EcSignature = std::array<uint8_t, ec::SIGNATURE_SIZE>;
-	using ChachaNonce = std::array<uint8_t, chacha::NONCE_SIZE>;
 	
 	static AppState* singleton;
 	
 	AppState(std::string myIp, int32_t port);
 	~AppState();
 	
-	bool ConnectAndHandshake(std::string ip, int32_t port);
+	ERROR_CODE ConnectAndHandshake(std::string ip, int32_t port);
 	
 	void BindAll();
-	
 	
 	void GenerateKey();
 	void LoadKey(std::string keyFilePath, const std::string& passphrase);
 	void SaveKey(std::string keyFilePath, const std::string& passphrase);
 	
+	KexMessage ReceiveKex(KexMessage kex);
 	
 	
 	
-	struct KexResponse {
-		std::array<uint8_t, ec::PUBLIC_KEY_SIZE> publicKey;
-		std::array<uint8_t, ec::PUBLIC_KEY_SIZE> publicEcdheKey;
-		std::array<uint8_t, ec::HASH_TO_SIGN_SIZE> messageSignature;
-		
-		MSGPACK_DEFINE_ARRAY(publicKey, publicEcdheKey, messageSignature);
-	};
+	uint32_t SendMessage(std::string message);
+	uint32_t ReceiveMessage(Message message);
+	void PushMessage(const std::string& message);
+	bool PopMessage(std::string& message);
 	
-	KexResponse ReceiveKex(uint32_t msgType,
-			const EcPublicKey& other_pubkey,
-			const EcPublicKey& ecdhe_pubkey,
-			std::string ipAddress, int32_t port,
-			const EcSignature& message_signature);
+public:
 	
+	void EncryptMessage(MSG_TYPE type, const void* plaintext, size_t length,
+			Message& message);
+	bool DecryptMessage(const Message& message,
+			std::vector<uint8_t>& plaintext);
 	
-	
-	
-	
-	
-	void SendMessage(std::string message);
-	
-	uint32_t ReceiveMessage(uint32_t msgType, uint32_t encryptionMode,
-			const ChachaNonce& nonce,
-			const std::vector<uint8_t>& message);
-	
-	void PushReceivedMessage(std::string message);
+	void Encrypt(const void* plaintext, size_t plaintextLength,
+			ChachaNonce& nonce, std::vector<uint8_t>& ciphertext,
+			const void* ad, size_t adLength, ENCRYPTION_MODE encryptionMode);
+	bool Decrypt(const void* ciphertext, size_t ciphertextLength,
+			const ChachaNonce& nonce, std::vector<uint8_t>& plaintext,
+			const void* ad, size_t adLength, ENCRYPTION_MODE encryptionMode);
 	
 public:
 	
@@ -81,8 +99,10 @@ public:
 	EcPublicKey publicKey;
 	EcPrivateKey privateKey;
 	Array32 sharedKey;
+	EcPublicKey theirPublicKey;
 	
-	std::vector<std::string> receivedMessages;
+	std::queue<std::string> receivedMessages;
+	std::mutex mutex;
 	std::string ipAddress;
 	int32_t port;
 };

@@ -4,16 +4,17 @@ CFLAGS = -lpthread -Ofast -s -m64 -Irpclib/include -Isrc -I"digestpp"
 CXX = g++
 CXXFLAGS = -std=c++17 $(CFLAGS)
 
-CRYPTO = bin/Crypto.o bin/Random.o bin/CryptoObjects.o
-RPCLIB = rpclib/librpc.a
-APP = bin/AppState.o
-OBJECTS = $(CRYPTO) $(RPCLIB) $(APP)
+OBJECTS = bin/Crypto.o bin/Random.o bin/CryptoObjects.o
+OBJECTS += bin/AppState.o
+OBJECTS += rpclib/librpc.a
+
+test1: tests/test_simple_communication.exe
 
 test: tests/test_crypto.exe tests/test_rpclib.exe
 	tests/test_crypto.exe
 	tests/test_rpclib.exe
 
-tests/%.exe: bin/%.o $(OBJECTS)
+tests/%.exe: bin/%.o $(OBJECTS) $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 
