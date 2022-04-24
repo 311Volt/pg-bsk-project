@@ -1,32 +1,14 @@
 
 #include "Crypto.hpp"
 
-#define HAVE_INTTYPES_H 1
-#define HAVE_STDINT_H 1
-#define HAVE_STDIO_H 1
-#define HAVE_STDLIB_H 1
-#define HAVE_STRINGS_H 1
-#define HAVE_STRING_H 1
-
-/*
-#define ECMULT_GEN_PREC_BITS 4
-#define ECMULT_WINDOW_SIZE 15
-*/
-
-#define ENABLE_MODULE_ECDH
-#define ENABLE_MODULE_RECOVERY
-#define SECP256K1_BUILD
-
 #include <cstdio>
 #include <cstring>
 #include <cinttypes>
 #include <cstdlib>
 #include <ctime>
 
-#include <secp256k1.h>
-#include <secp256k1_ecdh.h>
-#include <secp256k1_schnorrsig.h>
-#include <secp256k1_extrakeys.h>
+#include "CryptoObjects.h"
+
 
 class Ctx {
 public:
@@ -140,12 +122,6 @@ namespace ec {
 		memset(privkey32, 0, 32);
 		return ret;
 	}
-}
-
-extern "C" {
-#include "../../portable8439/src/poly1305-donna/poly1305-donna.h"
-#include "../../portable8439/src/portable8439.h"
-#include "../../portable8439/src/chacha-portable/chacha-portable.h"
 }
 
 namespace chacha {
