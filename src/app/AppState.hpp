@@ -12,6 +12,9 @@
 
 #include <rpc/client.h>
 #include <rpc/server.h>
+#include <rpc/rpc_error.h>
+
+#include <stdexcept>
 
 #include "Codes.hpp"
 
@@ -25,7 +28,13 @@ using EcPublicKey = std::array<uint8_t, ec::PUBLIC_KEY_SIZE>;
 using EcPrivateKey = std::array<uint8_t, ec::PRIVATE_KEY_SIZE>;
 using EcSignature = std::array<uint8_t, ec::SIGNATURE_SIZE>;
 using ChachaNonce = std::array<uint8_t, chacha::NONCE_SIZE>;
-	
+
+class KexError: public std::runtime_error{using std::runtime_error::runtime_error;};
+class KexKeygenFailed: public KexError{using KexError::KexError;};
+class KexSignFailed: public KexError{using KexError::KexError;};
+class KexConnectionFailed: public KexError{using KexError::KexError;};
+
+
 struct KexMessage {
 	ERROR_CODE error_code;
 	EcPublicKey publicKey;

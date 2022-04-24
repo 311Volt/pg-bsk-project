@@ -4,6 +4,8 @@
 #include "AppState.hpp"
 #include "crypto/Crypto.hpp"
 
+#include <fmt/format.h>
+
 AppState* AppState::singleton = NULL;
 
 void KexMessage::GenerateDigest(Array32& hash) {
@@ -48,10 +50,10 @@ AppState::~AppState() {
 void AppState::BindAll() {
 	rpcServer.bind("Message", [](Message msg)->uint32_t{
 					return singleton->ReceiveMessage(msg);
-				});
+	});
 	rpcServer.bind("Kex", [](KexMessage msg)->KexMessage{
 					return singleton->ReceiveKex(msg);
-				});
+	});
 }
 
 void AppState::GenerateKey() {
@@ -59,48 +61,46 @@ void AppState::GenerateKey() {
 }
 
 ERROR_CODE AppState::ConnectAndHandshake(std::string ip, int32_t port) {
-	client = new rpc::client(ip, port);
+	auto newClient = std::make_unique<rpc::client>(ip, port);
 	
 	KexMessage kex;
 	EcPrivateKey privateEcdheKey;
+
 	if(ec::GenKey(privateEcdheKey.data(), kex.publicEcdheKey.data()) == false) {
-		delete client;
-		client = NULL;
-		return FAILED;
+		throw KexKeygenFailed("Key generation failed");
 	}
+
 	kex.publicKey = publicKey;
 	kex.error_code = SUCCESS;
 	kex.ipaddress = ipAddress;
 	kex.port = this->port;
 
 	if(kex.Sign(this->privateKey) == false) {
-		delete client;
-		client = NULL;
-		return FAILED;
+		throw KexSignFailed("Cannot sign private key");
 	}
-	
-	KexMessage kexResponse = client->call("Kex", kex).as<KexMessage>();
-	
-	ERROR_CODE ret = kexResponse.error_code;
+
+	KexMessage kexResponse;
+	try {
+		kexResponse = newClient->call("Kex", kex).as<KexMessage>();
+	} catch(rpc::rpc_error& err) {
+		throw KexConnectionFailed(fmt::format("Cannot connect: {}", err.what()));
+	}
 	
 	if(kexResponse.error_code == SUCCESS) {
 		if(kexResponse.Verify()) {
 			if(ec::Ecdh(privateEcdheKey.data(),
 						kexResponse.publicEcdheKey.data(), sharedKey.data())) {
 				theirPublicKey = kexResponse.publicEcdheKey;
-				return SUCCESS;
 			} else {
-				ret = FAILED;
+				throw KexError("Key exchange failed");
 			}
 		} else {
-			ret = FAILED_VALIDATION_KEX;
+			throw KexError("Response verification failed");
 		}
 	}
-	if(ret != SUCCESS) {
-		delete client;
-		client = NULL;
-	}
-	return ret;
+
+	client = newClient.release();
+	return SUCCESS;
 }
 
 KexMessage AppState::ReceiveKex(KexMessage kexReceived) {

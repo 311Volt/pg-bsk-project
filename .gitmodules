@@ -10,3 +10,6 @@
 [submodule "dpp/digestpp"]
 	path = dpp/digestpp
 	url = https://github.com/kerukuro/digestpp.git
+[submodule "lpg-gui"]
+	path = lpg-gui
+	url = https://github.com/311Volt/lpg-gui.git

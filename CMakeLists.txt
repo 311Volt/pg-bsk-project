@@ -11,11 +11,15 @@ include("secp256k1_bsk.cmake")
 
 add_subdirectory("rpclib")
 
+OPTION(LPG_GUI_BUILD_EXAMPLES "" OFF)
+add_subdirectory("lpg-gui")
+
 add_executable(pg-bsk-project ${app_sources})
 
 target_link_libraries(pg-bsk-project PUBLIC secp256k1_bsk)
 target_link_libraries(pg-bsk-project PUBLIC portable8439_bsk)
 target_link_libraries(pg-bsk-project PUBLIC rpc)
+target_link_libraries(pg-bsk-project PUBLIC lpg_gui)
 
 
 target_include_directories(pg-bsk-project PUBLIC "src")
@@ -23,6 +27,13 @@ target_include_directories(pg-bsk-project PUBLIC "portable8439/src")
 target_include_directories(pg-bsk-project PUBLIC "secp256k1/include")
 target_include_directories(pg-bsk-project PUBLIC "rpclib/include")
 target_include_directories(pg-bsk-project PUBLIC "dpp")
+target_include_directories(pg-bsk-project PUBLIC "lpg-gui/axxegro/include")
+target_include_directories(pg-bsk-project PUBLIC "lpg-gui/include")
+
+add_custom_command(TARGET pg-bsk-project POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/resources/ ${CMAKE_CURRENT_BINARY_DIR}
+)
 
 
 
