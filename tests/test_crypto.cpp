@@ -1,5 +1,5 @@
 
-#include "../src/crypto/Crypto.hpp"
+#include <crypto/Crypto.hpp>
 
 #include <cstdio>
 

@@ -7,8 +7,12 @@
 #define HAVE_STDLIB_H 1
 #define HAVE_STRINGS_H 1
 #define HAVE_STRING_H 1
+
+/*
 #define ECMULT_GEN_PREC_BITS 4
 #define ECMULT_WINDOW_SIZE 15
+*/
+
 #define ENABLE_MODULE_ECDH
 #define ENABLE_MODULE_RECOVERY
 #define SECP256K1_BUILD
@@ -19,10 +23,10 @@
 #include <cstdlib>
 #include <ctime>
 
-#include "../../secp256k1/include/secp256k1.h"
-#include "../../secp256k1/include/secp256k1_ecdh.h"
-#include "../../secp256k1/include/secp256k1_schnorrsig.h"
-#include "../../secp256k1/include/secp256k1_extrakeys.h"
+#include <secp256k1.h>
+#include <secp256k1_ecdh.h>
+#include <secp256k1_schnorrsig.h>
+#include <secp256k1_extrakeys.h>
 
 class Ctx {
 public:

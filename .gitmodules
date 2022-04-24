@@ -4,9 +4,9 @@
 [submodule "portable8439"]
 	path = portable8439
 	url = https://github.com/DavyLandman/portable8439.git
-[submodule "digestpp"]
-	path = digestpp
-	url = https://github.com/kerukuro/digestpp.git
 [submodule "rpclib"]
 	path = rpclib
 	url = https://github.com/rpclib/rpclib.git
+[submodule "dpp/digestpp"]
+	path = dpp/digestpp
+	url = https://github.com/kerukuro/digestpp.git

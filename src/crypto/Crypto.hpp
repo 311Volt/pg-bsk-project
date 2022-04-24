@@ -5,7 +5,7 @@
 #include <errno.h>
 
 #include "Random.hpp"
-#include "../../digestpp/digestpp.hpp"
+#include <digestpp/digestpp.hpp>
 
 namespace ec {
 	inline const static int PRIVATE_KEY_SIZE = 32;
