@@ -11,6 +11,8 @@ extern "C" {
 #include <chacha-portable/chacha-portable.h>
 #include <poly1305-donna/poly1305-donna.h>
 
+void Chacha20Block(uint32_t* state);
+
 #ifdef __cplusplus
 }
 #endif

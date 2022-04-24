@@ -7,6 +7,7 @@
 #include <random>
 
 #include "Random.hpp"
+#include "CryptoObjects.h"
 
 Random randomInstance;
 thread_local const uint32_t thread_id = ++randomInstance.threadCounter;
@@ -77,8 +78,6 @@ Random::Random() {
 
 Random::~Random() {
 }
-
-extern "C" void Chacha20Block(uint32_t* state);
 
 void Random::Fill(void* ptr, size_t size) {
 	State state;
