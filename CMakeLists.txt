@@ -28,6 +28,8 @@ target_include_directories(pg-bsk-project PUBLIC "secp256k1/include")
 target_include_directories(pg-bsk-project PUBLIC "rpclib/include")
 target_include_directories(pg-bsk-project PUBLIC "dpp")
 target_include_directories(pg-bsk-project PUBLIC "lpg-gui/axxegro/include")
+target_include_directories(pg-bsk-project PUBLIC "lpg-gui/axxegro/fmt/include")
+target_include_directories(pg-bsk-project PUBLIC "lpg-gui/axxegro/tcbspan/include")
 target_include_directories(pg-bsk-project PUBLIC "lpg-gui/include")
 
 add_custom_command(TARGET pg-bsk-project POST_BUILD
@@ -36,5 +38,4 @@ add_custom_command(TARGET pg-bsk-project POST_BUILD
 )
 
 
-
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)

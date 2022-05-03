@@ -16,7 +16,7 @@ class MessageBox: public gui::Window {
 public:
 	MessageBox(int x, int y, const std::string_view text)
 		: gui::Window(x, y, 320, 240),
-		  txt(0, 0, al::CurrentDisplay().width(), al::CurrentDisplay().height())
+		  txt(0, 0, al::CurrentDisplay.width(), al::CurrentDisplay.height())
 	{
 			txt.setAlignment(gui::Window::Alignment::CENTER);
 			txt.setSizeMode(gui::Text::SizeMode::AUTO);
@@ -95,7 +95,7 @@ public:
 		setTitle(fmt::format("Chat: {}:{}", app->ipAddress, app->port));
 		give(std::make_unique<gui::TitleBar>());
 
-		recvBox.setBgColor(al::Col::White);
+		recvBox.setBgColor(al::White);
 		recvBox.setEdgeType(gui::Window::EdgeType::BEVELED_INWARD);
 
 		sendBox.setText("");
@@ -166,11 +166,11 @@ int main(int argc, char** argv)
 	auto app = std::make_shared<AppState>("127.0.0.1", myport);
 
 	gui::Desktop desk;
-	desk.setBgColor(al::Color::RGB(0,127,127));
+	desk.setBgColor(al::RGB(0,127,127));
 
-	gui::Text addrp(10, 10, al::CurrentDisplay().width(), al::CurrentDisplay().height());
+	gui::Text addrp(10, 10, al::CurrentDisplay.width(), al::CurrentDisplay.height());
 	addrp.setSizeMode(gui::Text::SizeMode::AUTO);
-	addrp.setTextColor(al::Col::White);
+	addrp.setTextColor(al::White);
 	addrp.setText(fmt::format("Server running on {}:{}", app->ipAddress, app->port));
 	addrp.setZIndex(311);
 	desk.addChild(addrp);
