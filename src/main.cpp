@@ -131,7 +131,7 @@ public:
 	{
 		appendToLog("Received: " + std::string(msg) + "\n");
 	}
-
+	
 	void sendMessage(std::string msg)
 	{
 		if(msg.size() == 0) {
@@ -140,7 +140,9 @@ public:
 			else
 				app->currentEncryptionMode = CHACHA20;
 		} else {
-			app->SendMessage(msg);
+			app->SendMessage(msg).Then<void>([](uint32_t v){
+					 printf(" received: %i\n", v);
+				});
 		}
 	}
 	

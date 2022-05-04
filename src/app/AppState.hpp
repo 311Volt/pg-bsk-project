@@ -2,6 +2,8 @@
 #ifndef PG_BSK_PROJECT_APP_STATE_HPP
 #define PG_BSK_PROJECT_APP_STATE_HPP
 
+#include <exception>
+#include <future>
 #include <vector>
 #include <string>
 #include <array>
@@ -14,9 +16,13 @@
 #include <rpc/server.h>
 #include <rpc/rpc_error.h>
 
+#include <fmt/format.h>
+
 #include <stdexcept>
 
 #include "Codes.hpp"
+#include "FuturePromise.hpp"
+#include "rpc/msgpack/v1/object.hpp"
 
 using Array12 = std::array<uint8_t, 12>;
 using Array16 = std::array<uint8_t, 16>;
@@ -33,6 +39,8 @@ class KexError: public std::runtime_error{using std::runtime_error::runtime_erro
 class KexKeygenFailed: public KexError{using KexError::KexError;};
 class KexSignFailed: public KexError{using KexError::KexError;};
 class KexConnectionFailed: public KexError{using KexError::KexError;};
+class SendEncryptedPacketFailed: public std::runtime_error{using std::runtime_error::runtime_error;};
+class SendMessageFailed: public std::runtime_error{using std::runtime_error::runtime_error;};
 
 
 struct KexMessage {
@@ -78,8 +86,12 @@ public:
 	KexMessage ReceiveKex(KexMessage kex);
 	
 	
+	template<typename Ret>
+	Future<Ret> SendEncryptedPacket(std::string functionName,
+			MSG_TYPE msgType, void* data, uint32_t bytes);
 	
-	uint32_t SendMessage(std::string message);
+	
+	Future<uint32_t> SendMessage(std::string message);
 	uint32_t ReceiveMessage(Message message);
 	void PushMessage(const std::string& message);
 	bool PopMessage(std::string& message);
@@ -115,6 +127,25 @@ public:
 	std::string ipAddress;
 	int32_t port;
 };
+
+template<typename Ret>
+Future<Ret> AppState::SendEncryptedPacket(std::string functionName,
+		MSG_TYPE msgType, void* data, uint32_t bytes) {
+	if(client == NULL) {
+		throw SendEncryptedPacketFailed(fmt::format("Failed to send encrypted packet due to NULL value of AppState::client"));
+	}
+	Message msg;
+	EncryptMessage(MSG, data, bytes, msg);
+	
+	
+	std::shared_future<clmdep_msgpack::v1::object_handle> future =
+		client->async_call(functionName, msg).share();
+	
+	return std::async([](std::shared_future<clmdep_msgpack::v1::object_handle> arg)->Ret {
+			auto& a = arg.get();
+			return ((clmdep_msgpack::v1::object_handle*)&a)->as<Ret>();
+		}, future).share();
+}
 
 #endif
 

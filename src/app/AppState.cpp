@@ -1,5 +1,7 @@
 
+#include <cmath>
 #include <functional>
+#include <memory>
 
 #include "AppState.hpp"
 #include "crypto/Crypto.hpp"
@@ -81,7 +83,7 @@ ERROR_CODE AppState::ConnectAndHandshake(std::string ip, int32_t port) {
 
 	KexMessage kexResponse;
 	try {
-		kexResponse = newClient->call("Kex", kex).as<KexMessage>();
+		kexResponse = newClient->async_call("Kex", kex).get().as<KexMessage>();
 	} catch(rpc::rpc_error& err) {
 		throw KexConnectionFailed(fmt::format("Cannot connect: {}", err.what()));
 	}
@@ -131,12 +133,9 @@ KexMessage AppState::ReceiveKex(KexMessage kexReceived) {
 
 
 
-uint32_t AppState::SendMessage(std::string message) {
-	if(client == NULL)
-		return FAILED;
-	Message msg;
-	EncryptMessage(MSG, message.data(), message.size(), msg);
-	return client->call("Message", msg).as<uint32_t>();
+Future<uint32_t> AppState::SendMessage(std::string message) {
+	return SendEncryptedPacket<uint32_t>("Message", MSG, message.data(),
+			message.size());
 }
 
 uint32_t AppState::ReceiveMessage(Message message) {
