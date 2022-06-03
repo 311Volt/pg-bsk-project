@@ -46,8 +46,8 @@ public:
 		  txtPort(20, 60, 70, 20),
 		  inAddr(70, 30, 100, 20),
 		  inPort(70, 60, 100, 20),
-		  connBtn(70, 30, 75, 100),
-		  handler(handler)
+		  handler(handler),
+		  connBtn(70, 30, 75, 100)
 	{
 		setTitle("Connect to a peer");
 		give(std::make_unique<gui::TitleBar>());

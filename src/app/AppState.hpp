@@ -3,6 +3,7 @@
 #define PG_BSK_PROJECT_APP_STATE_HPP
 
 #include <exception>
+#include <fstream>
 #include <future>
 #include <vector>
 #include <string>
@@ -23,6 +24,10 @@
 #include "Codes.hpp"
 #include "FuturePromise.hpp"
 #include "rpc/msgpack/v1/object.hpp"
+#include "Filestate.hpp"
+
+
+#define DEBUG() {printf(" DEBUG: %s:%i\n", __FILE__, __LINE__); fflush(stdout);}
 
 using Array12 = std::array<uint8_t, 12>;
 using Array16 = std::array<uint8_t, 16>;
@@ -41,7 +46,6 @@ class KexSignFailed: public KexError{using KexError::KexError;};
 class KexConnectionFailed: public KexError{using KexError::KexError;};
 class SendEncryptedPacketFailed: public std::runtime_error{using std::runtime_error::runtime_error;};
 class SendMessageFailed: public std::runtime_error{using std::runtime_error::runtime_error;};
-
 
 struct KexMessage {
 	ERROR_CODE error_code;
@@ -96,6 +100,10 @@ public:
 	void PushMessage(const std::string& message);
 	bool PopMessage(std::string& message);
 	
+	std::shared_ptr<Filestate> SendFile(std::string fileName);
+	uint32_t ReceiveFileMeta(Message message);
+	int32_t ReceiveFileBlock(Message message);
+	
 public:
 	
 	void EncryptMessage(MSG_TYPE type, const void* plaintext, size_t length,
@@ -122,6 +130,8 @@ public:
 	Array32 sharedKey;
 	EcPublicKey theirPublicKey;
 	
+	std::shared_ptr<Filestate> filestate;
+	
 	std::queue<std::string> receivedMessages;
 	std::mutex mutex;
 	std::string ipAddress;
@@ -135,7 +145,7 @@ Future<Ret> AppState::SendEncryptedPacket(std::string functionName,
 		throw SendEncryptedPacketFailed(fmt::format("Failed to send encrypted packet due to NULL value of AppState::client"));
 	}
 	Message msg;
-	EncryptMessage(MSG, data, bytes, msg);
+	EncryptMessage(msgType, data, bytes, msg);
 	
 	
 	std::shared_future<clmdep_msgpack::v1::object_handle> future =

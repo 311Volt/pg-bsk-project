@@ -56,6 +56,12 @@ void AppState::BindAll() {
 	rpcServer.bind("Kex", [](KexMessage msg)->KexMessage{
 					return singleton->ReceiveKex(msg);
 	});
+	rpcServer.bind("FileMeta", [](Message msg)->uint32_t{
+					return singleton->ReceiveFileMeta(msg);
+	});
+	rpcServer.bind("FileBlock", [](Message msg)->int32_t{
+					return singleton->ReceiveFileBlock(msg);
+	});
 }
 
 void AppState::GenerateKey() {
@@ -107,7 +113,9 @@ ERROR_CODE AppState::ConnectAndHandshake(std::string ip, int32_t port) {
 
 KexMessage AppState::ReceiveKex(KexMessage kexReceived) {
 	if(kexReceived.Verify() == false) {
-		return KexMessage{.error_code=FAILED_VALIDATION_KEX};
+		KexMessage ret;
+		ret.error_code = FAILED_VALIDATION_KEX;
+		return ret;
 	}
 	
 	theirPublicKey = kexReceived.publicEcdheKey;
@@ -115,7 +123,9 @@ KexMessage AppState::ReceiveKex(KexMessage kexReceived) {
 	KexMessage kex;
 	if(ec::Ecdhe(kexReceived.publicEcdheKey.data(), kex.publicEcdheKey.data(),
 				sharedKey.data()) == false) {
-		return KexMessage{.error_code=FAILED};
+		KexMessage ret;
+		ret.error_code = FAILED;
+		return ret;
 	}
 	kex.publicKey = publicKey;
 	kex.error_code = SUCCESS;
@@ -123,7 +133,9 @@ KexMessage AppState::ReceiveKex(KexMessage kexReceived) {
 	kex.port = this->port;
 
 	if(kex.Sign(this->privateKey) == false) {
-		return KexMessage{.error_code=FAILED};
+		KexMessage ret;
+		ret.error_code = FAILED;
+		return ret;
 	}
 	
 	client = new rpc::client(kexReceived.ipaddress, kexReceived.port);
@@ -134,6 +146,7 @@ KexMessage AppState::ReceiveKex(KexMessage kexReceived) {
 
 
 Future<uint32_t> AppState::SendMessage(std::string message) {
+	SendFile(message);
 	return SendEncryptedPacket<uint32_t>("Message", MSG, message.data(),
 			message.size());
 }
@@ -163,6 +176,50 @@ bool AppState::PopMessage(std::string& message) {
 	message = receivedMessages.front();
 	receivedMessages.pop();
 	return true;
+}
+
+
+std::shared_ptr<Filestate> AppState::SendFile(std::string fileName) {
+	std::shared_ptr<Filestate> fs = std::make_shared<Filestate>(fileName);
+	filestate = fs;
+	if(fs->Valid() == false) {
+		return NULL;
+	}
+	fs->SendMeta();
+	return fs;
+}
+
+uint32_t AppState::ReceiveFileMeta(Message message) {
+	std::vector<uint8_t> plaintext;
+	bool res = DecryptMessage(message, plaintext);
+	if(res) {
+		if(message.msg_type == FILE_META) {
+			size_t size = *(uint64_t*)(plaintext.data());
+			std::string name = (char*)(plaintext.data()+8);
+			filestate = std::make_shared<Filestate>(name, size);
+			if(filestate->Valid()) {
+				return 0;
+			} else {
+				filestate = NULL;
+				return 1;
+			}
+		}
+	}
+	return 2;
+}
+
+int32_t AppState::ReceiveFileBlock(Message message) {
+	std::vector<uint8_t> plaintext;
+	bool res = DecryptMessage(message, plaintext);
+	if(res) {
+		if(message.msg_type == FILE_BLOCK) {
+			if(filestate == NULL) {
+				return -1;
+			}
+			return filestate->UpdateReceive(plaintext.data(), plaintext.size());
+		}
+	}
+	return -2;
 }
 
 

@@ -1,4 +1,7 @@
 
+#ifndef PG_BSK_PROJECT_FUTURE_PROMISE_HPP
+#define PG_BSK_PROJECT_FUTURE_PROMISE_HPP
+
 #include <future>
 #include <memory>
 #include <exception>
@@ -96,7 +99,7 @@ public:
 	Promise() {}
 	
 	Future<Arg> GetFuture() {
-		return promise.shared();
+		return Future<Arg>(promise.get_future().share());
 	}
 	
 	Promise<Arg>& SetValue(Arg value) {
@@ -113,4 +116,6 @@ private:
 	
 	std::promise<Arg> promise;
 };
+
+#endif
 
