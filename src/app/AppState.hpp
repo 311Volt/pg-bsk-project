@@ -1,9 +1,9 @@
 
-#ifndef PG_BSK_PROJECT_APP_STATE_HPP
-#define PG_BSK_PROJECT_APP_STATE_HPP
+#ifndef SRC_APP_APPSTATE
+#define SRC_APP_APPSTATE
 
 #include <exception>
-#include <fstream>
+#include <stdexcept>
 #include <future>
 #include <vector>
 #include <string>
@@ -16,14 +16,13 @@
 #include <rpc/client.h>
 #include <rpc/server.h>
 #include <rpc/rpc_error.h>
+#include <rpc/msgpack/v1/object.hpp>
 
 #include <fmt/format.h>
 
-#include <stdexcept>
 
 #include "Codes.hpp"
 #include "FuturePromise.hpp"
-#include "rpc/msgpack/v1/object.hpp"
 #include "Filestate.hpp"
 
 
@@ -47,33 +46,19 @@ class KexConnectionFailed: public KexError{using KexError::KexError;};
 class SendEncryptedPacketFailed: public std::runtime_error{using std::runtime_error::runtime_error;};
 class SendMessageFailed: public std::runtime_error{using std::runtime_error::runtime_error;};
 
-struct KexMessage {
-	ERROR_CODE error_code;
-	EcPublicKey publicKey;
-	EcPublicKey publicEcdheKey;
-	std::string ipaddress;
-	int port;
-	EcSignature signature;
-	
-	void GenerateDigest(Array32& hash);
-	bool Verify();
-	bool Sign(EcPrivateKey& privkey);
-
-	MSGPACK_DEFINE_ARRAY(error_code, publicKey, publicEcdheKey, ipaddress, port, signature);
-};
+struct KexMessage;
 
 struct Message {
-    MSG_TYPE msg_type;
-    ENCRYPTION_MODE cipher_variant;
+	MSG_TYPE msg_type;
+	ENCRYPTION_MODE cipher_variant;
 	ChachaNonce nonce;
-    std::vector<uint8_t> encrypted_data;
+	std::vector<uint8_t> encrypted_data;
 
 	MSGPACK_DEFINE_ARRAY(msg_type, cipher_variant, nonce, encrypted_data);
 };
 
 class AppState {
 public:
-	
 	static AppState* singleton;
 	
 	AppState(std::string myIp, int32_t port);
@@ -97,6 +82,7 @@ public:
 	
 	Future<uint32_t> SendMessage(std::string message);
 	uint32_t ReceiveMessage(Message message);
+
 	void PushMessage(const std::string& message);
 	bool PopMessage(std::string& message);
 	
@@ -123,7 +109,7 @@ public:
 	ENCRYPTION_MODE currentEncryptionMode;
 	
 	rpc::server rpcServer;
-	rpc::client* client;
+	std::unique_ptr<rpc::client> client;
 	
 	EcPublicKey publicKey;
 	EcPrivateKey privateKey;
@@ -136,7 +122,13 @@ public:
 	std::mutex mutex;
 	std::string ipAddress;
 	int32_t port;
+
+	std::string theirIPAddress;
+	int32_t theirPort;
 };
+
+
+
 
 template<typename Ret>
 Future<Ret> AppState::SendEncryptedPacket(std::string functionName,
@@ -157,5 +149,5 @@ Future<Ret> AppState::SendEncryptedPacket(std::string functionName,
 		}, future).share();
 }
 
-#endif
+#endif /* SRC_APP_APPSTATE */
 

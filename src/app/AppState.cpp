@@ -4,71 +4,59 @@
 #include <memory>
 
 #include "AppState.hpp"
+#include "KexMessage.hpp"
 #include "crypto/Crypto.hpp"
 
 #include <fmt/format.h>
 
-AppState* AppState::singleton = NULL;
+AppState* AppState::singleton = nullptr;
 
-void KexMessage::GenerateDigest(Array32& hash) {
-	digest::sha256()
-		.absorb((uint8_t)error_code)
-		.absorb(publicKey.data(), publicKey.size())
-		.absorb(publicEcdheKey.data(), publicEcdheKey.size())
-		.absorb(ipaddress.data(), ipaddress.size())
-		.absorb(port)
-		.finalize(hash.data());
+
+AppState::AppState(std::string myIp, int32_t port) : 
+	rpcServer(port),
+	ipAddress(myIp), 
+	port(port) 
+{
+	client = nullptr;
+	GenerateKey();
+	BindAll();
+	rpcServer.async_run(1);
+	currentEncryptionMode = ENCRYPTION_MODE::CHACHA20_POLY1305;
+	singleton = this;
 }
 
-bool KexMessage::Verify() {
-	Array32 hash;
-	GenerateDigest(hash);
-	return ec::Verify(publicKey.data(), hash.data(), signature.data());
-}
-
-bool KexMessage::Sign(EcPrivateKey& privkey) {
-	Array32 hash;
-	GenerateDigest(hash);
-	return ec::Sign(privkey.data(), hash.data(), signature.data());
-}
-
-AppState::AppState(std::string myIp, int32_t port) : rpcServer(port),
-	ipAddress(myIp), port(port) {
-		client = NULL;
-		GenerateKey();
-		BindAll();
-		rpcServer.async_run(1);
-		currentEncryptionMode = ENCRYPTION_MODE::CHACHA20_POLY1305;
-		singleton = this;
-}
-
-AppState::~AppState() {
-	if(client)
-		delete client;
+AppState::~AppState() 
+{
 	if(singleton == this)
-		singleton = NULL;
+		singleton = nullptr;
 }
 
-void AppState::BindAll() {
+void AppState::BindAll() 
+{
 	rpcServer.bind("Message", [](Message msg)->uint32_t{
-					return singleton->ReceiveMessage(msg);
+		return singleton->ReceiveMessage(msg);
 	});
+
 	rpcServer.bind("Kex", [](KexMessage msg)->KexMessage{
-					return singleton->ReceiveKex(msg);
+		return singleton->ReceiveKex(msg);
 	});
+
 	rpcServer.bind("FileMeta", [](Message msg)->uint32_t{
-					return singleton->ReceiveFileMeta(msg);
+		return singleton->ReceiveFileMeta(msg);
 	});
+
 	rpcServer.bind("FileBlock", [](Message msg)->int32_t{
-					return singleton->ReceiveFileBlock(msg);
+		return singleton->ReceiveFileBlock(msg);
 	});
 }
 
-void AppState::GenerateKey() {
+void AppState::GenerateKey() 
+{
 	ec::GenKey(this->privateKey.data(), this->publicKey.data());
 }
 
-ERROR_CODE AppState::ConnectAndHandshake(std::string ip, int32_t port) {
+ERROR_CODE AppState::ConnectAndHandshake(std::string ip, int32_t port) 
+{
 	auto newClient = std::make_unique<rpc::client>(ip, port);
 	
 	KexMessage kex;
@@ -96,8 +84,11 @@ ERROR_CODE AppState::ConnectAndHandshake(std::string ip, int32_t port) {
 	
 	if(kexResponse.error_code == SUCCESS) {
 		if(kexResponse.Verify()) {
-			if(ec::Ecdh(privateEcdheKey.data(),
-						kexResponse.publicEcdheKey.data(), sharedKey.data())) {
+			if(ec::Ecdh(
+				privateEcdheKey.data(),
+				kexResponse.publicEcdheKey.data(), 
+				sharedKey.data()
+			)) {
 				theirPublicKey = kexResponse.publicEcdheKey;
 			} else {
 				throw KexError("Key exchange failed");
@@ -105,13 +96,19 @@ ERROR_CODE AppState::ConnectAndHandshake(std::string ip, int32_t port) {
 		} else {
 			throw KexError("Response verification failed");
 		}
+	} else {
+		throw KexError("Key exchange was rejected by peer");
 	}
 
-	client = newClient.release();
+	theirIPAddress = kexResponse.ipaddress;
+	theirPort = kexResponse.port;
+
+	client = std::move(newClient);
 	return SUCCESS;
 }
 
-KexMessage AppState::ReceiveKex(KexMessage kexReceived) {
+KexMessage AppState::ReceiveKex(KexMessage kexReceived) 
+{
 	if(kexReceived.Verify() == false) {
 		KexMessage ret;
 		ret.error_code = FAILED_VALIDATION_KEX;
@@ -138,20 +135,21 @@ KexMessage AppState::ReceiveKex(KexMessage kexReceived) {
 		return ret;
 	}
 	
-	client = new rpc::client(kexReceived.ipaddress, kexReceived.port);
+	client = std::make_unique<rpc::client>(kexReceived.ipaddress, kexReceived.port);
 	
 	return kex;
 }
 
 
 
-Future<uint32_t> AppState::SendMessage(std::string message) {
+Future<uint32_t> AppState::SendMessage(std::string message)
+{
 	SendFile(message);
-	return SendEncryptedPacket<uint32_t>("Message", MSG, message.data(),
-			message.size());
+	return SendEncryptedPacket<uint32_t>("Message", MSG, message.data(), message.size());
 }
 
-uint32_t AppState::ReceiveMessage(Message message) {
+uint32_t AppState::ReceiveMessage(Message message)
+{
 	std::vector<uint8_t> plaintext;
 	bool res = DecryptMessage(message, plaintext);
 	if(res) {
@@ -164,12 +162,14 @@ uint32_t AppState::ReceiveMessage(Message message) {
 	return INVALID_FUNCTION_PER_TYPE;
 }
 
-void AppState::PushMessage(const std::string& message) {
+void AppState::PushMessage(const std::string& message)
+{
 	std::lock_guard<std::mutex> l{mutex};
 	receivedMessages.push(message);
 }
 
-bool AppState::PopMessage(std::string& message) {
+bool AppState::PopMessage(std::string& message)
+{
 	std::lock_guard<std::mutex> l{mutex};
 	if(receivedMessages.empty())
 		return false;
@@ -179,17 +179,19 @@ bool AppState::PopMessage(std::string& message) {
 }
 
 
-std::shared_ptr<Filestate> AppState::SendFile(std::string fileName) {
+std::shared_ptr<Filestate> AppState::SendFile(std::string fileName)
+{
 	std::shared_ptr<Filestate> fs = std::make_shared<Filestate>(fileName);
 	filestate = fs;
 	if(fs->Valid() == false) {
-		return NULL;
+		return nullptr;
 	}
 	fs->SendMeta();
 	return fs;
 }
 
-uint32_t AppState::ReceiveFileMeta(Message message) {
+uint32_t AppState::ReceiveFileMeta(Message message)
+{
 	std::vector<uint8_t> plaintext;
 	bool res = DecryptMessage(message, plaintext);
 	if(res) {
@@ -200,7 +202,7 @@ uint32_t AppState::ReceiveFileMeta(Message message) {
 			if(filestate->Valid()) {
 				return 0;
 			} else {
-				filestate = NULL;
+				filestate = nullptr;
 				return 1;
 			}
 		}
@@ -208,12 +210,13 @@ uint32_t AppState::ReceiveFileMeta(Message message) {
 	return 2;
 }
 
-int32_t AppState::ReceiveFileBlock(Message message) {
+int32_t AppState::ReceiveFileBlock(Message message)
+{
 	std::vector<uint8_t> plaintext;
 	bool res = DecryptMessage(message, plaintext);
 	if(res) {
 		if(message.msg_type == FILE_BLOCK) {
-			if(filestate == NULL) {
+			if(filestate == nullptr) {
 				return -1;
 			}
 			return filestate->UpdateReceive(plaintext.data(), plaintext.size());
@@ -225,7 +228,8 @@ int32_t AppState::ReceiveFileBlock(Message message) {
 
 
 void AppState::EncryptMessage(MSG_TYPE type, const void* plaintext,
-		size_t length, Message& message) {
+		size_t length, Message& message)
+{
 	message.cipher_variant = currentEncryptionMode;
 	message.msg_type = type;
 	uint8_t ad[2] = {(uint8_t)message.msg_type,
@@ -235,7 +239,8 @@ void AppState::EncryptMessage(MSG_TYPE type, const void* plaintext,
 }
 
 bool AppState::DecryptMessage(const Message& message,
-		std::vector<uint8_t>& plaintext) {
+		std::vector<uint8_t>& plaintext) 
+{
 	uint8_t ad[2] = {(uint8_t)message.msg_type,
 		(uint8_t)message.cipher_variant};
 	return Decrypt(message.encrypted_data.data(), message.encrypted_data.size(),
@@ -246,7 +251,8 @@ bool AppState::DecryptMessage(const Message& message,
 
 void AppState::Encrypt(const void* plaintext, size_t plaintextLength,
 		ChachaNonce& nonce, std::vector<uint8_t>& ciphertext,
-		const void* ad, size_t adLength, ENCRYPTION_MODE encryptionMode) {
+		const void* ad, size_t adLength, ENCRYPTION_MODE encryptionMode) 
+{
 	Random::Fill(nonce.data(), nonce.size());
 	if(encryptionMode == CHACHA20) {
 		ciphertext.resize(plaintextLength);
@@ -261,7 +267,8 @@ void AppState::Encrypt(const void* plaintext, size_t plaintextLength,
 
 bool AppState::Decrypt(const void* ciphertext, size_t ciphertextLength,
 		const ChachaNonce& nonce, std::vector<uint8_t>& plaintext,
-		const void* ad, size_t adLength, ENCRYPTION_MODE encryptionMode) {
+		const void* ad, size_t adLength, ENCRYPTION_MODE encryptionMode) 
+{
 	if(encryptionMode == CHACHA20) {
 		plaintext.resize(ciphertextLength);
 		chacha::crypt(sharedKey.data(), nonce.data(), ciphertext,
