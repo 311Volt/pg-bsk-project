@@ -60,7 +60,7 @@ void ChatWindow::sendMessage(std::string msg)
 			app->currentEncryptionMode = CHACHA20;
 	} else {
 		app->SendMessage(msg).Then<void>([](uint32_t v){
-					printf(" received: %i\n", v);
+					//printf(" received: %i\n", v);
 			});
 	}
 }

@@ -21,7 +21,6 @@ public:
 	void appendToLog(const std::string_view text);
 	void acknowledgeReceivedMessage(const std::string_view msg);
 	void sendMessage(std::string msg);
-	
 };
 
 

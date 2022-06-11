@@ -33,6 +33,8 @@ AppGUI::AppGUI(std::shared_ptr<AppState> appState)
 	);
 	desk.give(std::move(addrWin));
 
+	appState->SetReceiveKexCallback([this](){initiateChat();});
+
 	desk.addChild(serverAddrInfo);
 	desk.addChild(credits);
 	serverAddrInfo.setZIndex(-1000);
@@ -47,7 +49,7 @@ void AppGUI::initiateChat()
 	);
 
 	chatWin->appendToLog(fmt::format(
-		"Connection initiated with {}:{}",
+		"Connection initiated with {}:{}\n",
 		appState->theirIPAddress,
 		appState->theirPort
 	));

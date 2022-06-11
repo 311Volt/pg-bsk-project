@@ -3,6 +3,8 @@
 
 #include <lpg/gui/gui.hpp>
 
+#include "../controls/ProgressBar.hpp"
+
 class AddressWindow: public gui::Window {
 
 	gui::Text txtAddr, txtPort;

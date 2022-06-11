@@ -73,6 +73,7 @@ public:
 	void SaveKey(std::string keyFilePath, const std::string& passphrase);
 	
 	KexMessage ReceiveKex(KexMessage kex);
+	void SetReceiveKexCallback(std::function<void(void)> fn);
 	
 	
 	template<typename Ret>
@@ -125,6 +126,8 @@ public:
 
 	std::string theirIPAddress;
 	int32_t theirPort;
+
+	std::function<void(void)> onReceiveKex;
 };
 
 
@@ -133,7 +136,7 @@ public:
 template<typename Ret>
 Future<Ret> AppState::SendEncryptedPacket(std::string functionName,
 		MSG_TYPE msgType, void* data, uint32_t bytes) {
-	if(client == NULL) {
+	if(!client) {
 		throw SendEncryptedPacketFailed(fmt::format("Failed to send encrypted packet due to NULL value of AppState::client"));
 	}
 	Message msg;

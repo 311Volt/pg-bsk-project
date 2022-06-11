@@ -136,15 +136,23 @@ KexMessage AppState::ReceiveKex(KexMessage kexReceived)
 	}
 	
 	client = std::make_unique<rpc::client>(kexReceived.ipaddress, kexReceived.port);
-	
+
+	theirIPAddress = kexReceived.ipaddress;
+	theirPort = kexReceived.port;
+
+	if(onReceiveKex)
+		onReceiveKex();
 	return kex;
 }
 
-
+void AppState::SetReceiveKexCallback(std::function<void(void)> fn)
+{
+	onReceiveKex = fn;
+}
 
 Future<uint32_t> AppState::SendMessage(std::string message)
 {
-	SendFile(message);
+	//SendFile(message);
 	return SendEncryptedPacket<uint32_t>("Message", MSG, message.data(), message.size());
 }
 
