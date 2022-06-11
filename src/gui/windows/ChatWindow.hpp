@@ -9,6 +9,8 @@ class ChatWindow: public gui::Window {
 	gui::Text recvBox;
 	gui::TextBox sendBox;
 
+	gui::DropdownList encMode;
+
 	gui::Button sendBtn;
 	std::string buf;
 	bool bufChanged;

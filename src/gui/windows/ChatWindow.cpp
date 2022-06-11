@@ -1,11 +1,14 @@
 #include "ChatWindow.hpp"
 
+#include <fmt/format.h>
+
 ChatWindow::ChatWindow(al::Coord<> pos, std::shared_ptr<AppState> app)
 	: Window({640, 480}, pos),
 		recvBox({600, 300}, {20, 30}),
 		sendBox({570, 20}, {20, 340}),
 		sendBtn({30, 20}, {590, 340}, "Send"),
-		app(app)
+		app(app),
+		encMode({200, 20}, {20, 380}, {200, 100})
 {
 	bufChanged = true;
 	setTitle(fmt::format("Chat: {}:{}", app->ipAddress, app->port));
@@ -19,12 +22,30 @@ ChatWindow::ChatWindow(al::Coord<> pos, std::shared_ptr<AppState> app)
 	addChild(sendBox);
 	addChild(sendBtn);
 
-	sendBtn.setCallback([&](){
+	sendBtn.setCallback([this](){
 		std::string msg = sendBox.getText();
 		appendToLog("Sending: "+msg+"\n");
 		sendMessage(msg);
 		sendBox.setText("");
 	});
+
+	encMode.setElements({
+		{CHACHA20_POLY1305, "CHACHA20_POLY1305"},
+		{CHACHA20, "CHACHA20"}
+	});
+	encMode.setOnChangeCallback([this](uint32_t mode){
+		static std::unordered_map<uint32_t, std::string> encModeNames = {
+			{CHACHA20_POLY1305, "CHACHA20_POLY1305"},
+			{CHACHA20, "CHACHA20"}
+		};
+
+		if(encModeNames.count(mode)) {
+			this->app->currentEncryptionMode = (ENCRYPTION_MODE)mode;
+			appendToLog(fmt::format("Encryption mode changed to {}\n", encModeNames[mode]));
+		}
+	});
+
+	addChild(encMode);
 }
 
 void ChatWindow::tick()
@@ -48,19 +69,10 @@ void ChatWindow::appendToLog(const std::string_view text)
 
 void ChatWindow::acknowledgeReceivedMessage(const std::string_view msg)
 {
-	appendToLog("Received: " + std::string(msg) + "\n");
+	appendToLog(fmt::format("Received: {}\n", msg));
 }
 
 void ChatWindow::sendMessage(std::string msg)
 {
-	if(msg.size() == 0) {
-		if(app->currentEncryptionMode == CHACHA20)
-			app->currentEncryptionMode = CHACHA20_POLY1305;
-		else
-			app->currentEncryptionMode = CHACHA20;
-	} else {
-		app->SendMessage(msg).Then<void>([](uint32_t v){
-					//printf(" received: %i\n", v);
-			});
-	}
+	app->SendMessage(msg).Then<void>([](uint32_t v){});
 }
