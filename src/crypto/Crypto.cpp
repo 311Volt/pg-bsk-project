@@ -32,6 +32,10 @@ namespace ec {
 			Random::Fill(privkey32, 32);
 		} while(!secp256k1_ec_seckey_verify(ctx.ctx,
 					(const uint8_t*)privkey32));
+		return DerivePublicKey(privkey32, pubkey33);
+	}
+	
+	bool DerivePublicKey(const void* privkey32, void* pubkey33) {
 		secp256k1_pubkey pubkey_;
 		int res1 = (1-secp256k1_ec_pubkey_create(ctx.ctx, &pubkey_,
 					(const uint8_t*)privkey32)) << 1;

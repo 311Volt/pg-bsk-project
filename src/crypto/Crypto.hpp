@@ -3,6 +3,7 @@
 #define CRYPTO_HPP
 
 #include <errno.h>
+#include <array>
 
 #include "Random.hpp"
 #include "../../dpp/digestpp/digestpp.hpp"
@@ -15,6 +16,7 @@ namespace ec {
 	inline const static int SIGNATURE_SIZE = 64;
 	
 	bool GenKey(void* privkey32, void* pubkey33);
+	bool DerivePublicKey(const void* privkey32, void* pubkey33);
 	bool Sign(const void* privkey32, const void* hash32, void* sign64);
 	bool Verify(const void* pubkey33, const void* hash32, const void* sign64);
 	bool Sign(const void* privkey32, const void* msg, size_t msglen, void* sign64);
@@ -77,6 +79,12 @@ namespace digest {
 		}
 		inline sha& absorb(uint8_t byte) {
 			hash.absorb(&byte, 1);
+			return *this;
+		}
+		template<typename T, size_t N>
+		inline sha& absorb(const std::array<T, N>& arr) {
+			for(T v : arr)
+				absorb(v);
 			return *this;
 		}
 		inline void finalize(void* digest/*[bytes]*/) const {

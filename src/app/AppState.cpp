@@ -1,4 +1,5 @@
 
+#include <fstream>
 #include <cmath>
 #include <functional>
 #include <memory>
@@ -50,9 +51,96 @@ void AppState::BindAll()
 	});
 }
 
-void AppState::GenerateKey() 
-{
-	ec::GenKey(this->privateKey.data(), this->publicKey.data());
+bool AppState::GenerateKey() {
+	return ec::GenKey(this->privateKey.data(), this->publicKey.data());
+}
+
+bool AppState::LoadPrivateKey(std::string keyFilePath,
+		const std::string& passphrase) {
+	std::ifstream file(keyFilePath);
+	if(file.good()) {
+		Array32 fkey, saltA, saltB, saltC;
+		file.read((char*)saltA.data(), saltA.size());
+		file.read((char*)saltB.data(), saltB.size());
+		file.read((char*)saltC.data(), saltC.size());
+		
+		digest::sha256()
+			.absorb(saltA)
+			.absorb(passphrase.data(), passphrase.size())
+			.absorb(saltB)
+			.finalize(fkey.data());
+		digest::sha256()
+			.absorb(fkey)
+			.absorb(saltC)
+			.finalize(fkey.data());
+		
+		ChachaNonce nonce;
+		file.read((char*)nonce.data(), nonce.size());
+		
+		std::array<uint8_t, chacha::MAC_SIZE+ec::PRIVATE_KEY_SIZE> cipheredKey;
+		EcPrivateKey key;
+		file.read((char*)cipheredKey.data(), cipheredKey.size());
+		if(chacha::decrypt(fkey.data(), nonce.data(), cipheredKey.data(),
+					key.data(), cipheredKey.size(), NULL, 0) == false)
+			return false;
+		this->privateKey = key;
+		return ec::DerivePublicKey(this->privateKey.data(),
+				this->publicKey.data());
+	}
+	return false;
+}
+
+bool AppState::SavePrivateKey(std::string keyFilePath,
+		const std::string& passphrase) const {
+	std::ofstream file(keyFilePath);
+	if(file.good()) {
+		Array32 fkey, saltA, saltB, saltC;
+		Random::Fill(saltA.data(), saltA.size());
+		Random::Fill(saltB.data(), saltB.size());
+		Random::Fill(saltC.data(), saltC.size());
+		file.write((char*)saltA.data(), saltA.size());
+		file.write((char*)saltB.data(), saltB.size());
+		file.write((char*)saltC.data(), saltC.size());
+		
+		digest::sha256()
+			.absorb(saltA)
+			.absorb(passphrase.data(), passphrase.size())
+			.absorb(saltB)
+			.finalize(fkey.data());
+		digest::sha256()
+			.absorb(fkey)
+			.absorb(saltC)
+			.finalize(fkey.data());
+		
+		ChachaNonce nonce;
+		Random::Fill(nonce.data(), nonce.size());
+		file.write((char*)nonce.data(), nonce.size());
+		
+		std::array<uint8_t, chacha::MAC_SIZE+ec::PRIVATE_KEY_SIZE> cipheredKey;
+		chacha::encrypt(fkey.data(), nonce.data(), this->privateKey.data(),
+				cipheredKey.data(), this->privateKey.size(), NULL, 0);
+		file.write((char*)cipheredKey.data(), cipheredKey.size());
+		return true;
+	}
+	return false;
+}
+
+bool AppState::LoadPublicKey(std::string keyFilePath) {
+	std::ifstream file(keyFilePath);
+	if(file.good()) {
+		file.read((char*)publicKey.data(), publicKey.size());
+		return true;
+	}
+	return false;
+}
+
+bool AppState::SavePublicKey(std::string keyFilePath) const {
+	std::ofstream file(keyFilePath);
+	if(file.good()) {
+		file.write((const char*)publicKey.data(), publicKey.size());
+		return true;
+	}
+	return false;
 }
 
 ERROR_CODE AppState::ConnectAndHandshake(std::string ip, int32_t port) 
@@ -152,7 +240,6 @@ void AppState::SetReceiveKexCallback(std::function<void(void)> fn)
 
 Future<uint32_t> AppState::SendMessage(std::string message)
 {
-	//SendFile(message);
 	return SendEncryptedPacket<uint32_t>("Message", MSG, message.data(), message.size());
 }
 

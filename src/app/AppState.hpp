@@ -68,9 +68,11 @@ public:
 	
 	void BindAll();
 	
-	void GenerateKey();
-	void LoadKey(std::string keyFilePath, const std::string& passphrase);
-	void SaveKey(std::string keyFilePath, const std::string& passphrase);
+	bool GenerateKey();
+	bool LoadPrivateKey(std::string keyFilePath, const std::string& passphrase);
+	bool SavePrivateKey(std::string keyFilePath, const std::string& passphrase) const;
+	bool LoadPublicKey(std::string keyFilePath);
+	bool SavePublicKey(std::string keyFilePath) const;
 	
 	KexMessage ReceiveKex(KexMessage kex);
 	void SetReceiveKexCallback(std::function<void(void)> fn);
@@ -141,6 +143,8 @@ Future<Ret> AppState::SendEncryptedPacket(std::string functionName,
 	}
 	Message msg;
 	EncryptMessage(msgType, data, bytes, msg);
+	printf(" packet: rpc->%s(type: %i, cipher: %i, [%ud->%lu]);\n",
+			functionName.c_str(), msgType, msg.cipher_variant, bytes, msg.encrypted_data.size());
 	
 	
 	std::shared_future<clmdep_msgpack::v1::object_handle> future =
