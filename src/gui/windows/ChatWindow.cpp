@@ -51,7 +51,7 @@ ChatWindow::ChatWindow(al::Coord<> pos, std::shared_ptr<AppState> app)
 
 		if(encModeNames.count(mode)) {
 			this->app->currentEncryptionMode = (ENCRYPTION_MODE)mode;
-			appendToLog(fmt::format("Encryption mode changed to {}\n", encModeNames[mode]));
+			println("Encryption mode changed to {}", encModeNames[mode]);
 		}
 	});
 
@@ -67,6 +67,7 @@ ChatWindow::ChatWindow(al::Coord<> pos, std::shared_ptr<AppState> app)
 	});
 
 	updateKeyText();
+	updateLog();
 }
 
 
@@ -104,7 +105,7 @@ std::optional<KeyPairPaths> CheckKeyPathsSave(const std::vector<std::string>& pa
 void ChatWindow::genKeyPair()
 {
 	app->GenerateKey();
-	appendToLog("Generated new key\n");
+	println("Generated new key");
 	updateKeyText();
 }
 
@@ -135,10 +136,10 @@ void ChatWindow::tryLoadKeyPair(al::FileDialogResult& r)
 		throw KeyMgrError("Make sure {} exists.", kp->pubKeyPath);
 	}
 
-	appendToLog(fmt::format(
+	println(
 		"Key pair loaded from {}.(key,pub) successfully\n",
 		stdfs::path(kp->pubKeyPath).replace_extension().string()
-	));
+	);
 
 	updateKeyText();
 	pfLoadPass.setText("");
@@ -162,10 +163,10 @@ void ChatWindow::trySaveKeyPair(al::FileDialogResult& r)
 	app->SavePrivateKey(ppriv.string(), pp);
 	app->SavePublicKey(ppub.string());
 
-	appendToLog(fmt::format(
+	println(
 		"Current key pair saved to {}.(key,pub)\n",
 		stdfs::path(path).replace_extension().string()
-	));
+	);
 
 	pfSavePass.setText("");
 	updateKeyText();
@@ -230,17 +231,36 @@ void ChatWindow::tick()
 	Window::tick();
 }
 
+std::string StrMerge(const std::deque<std::string>& deq)
+{
+	std::string ret;
+	for(const auto& ln: deq) {
+		ret += ln + "\n";
+	}
+	return ret;
+}
+
+void ChatWindow::updateLog()
+{
+	recvBox.setText(StrMerge(log));
+	while(recvBox.getSpan().height() >= recvBox.getHeight()-10) {
+		log.pop_front();
+		recvBox.setText(StrMerge(log));
+		recvBox.updateIfNeeded();
+	}
+}
+
 void ChatWindow::appendToLog(const std::string_view text)
 {
 	std::lock_guard<std::mutex> lk(mtx);
 
-	buf += text;
-	bufChanged = true;
+	log.push_back(std::string(text));
+	updateLog();
 }
 
 void ChatWindow::acknowledgeReceivedMessage(const std::string_view msg)
 {
-	appendToLog(fmt::format("Received: {}\n", msg));
+	println("Received: {}", msg);
 }
 
 void ChatWindow::onSend()
@@ -249,7 +269,7 @@ void ChatWindow::onSend()
 	if(!msg.size()) {
 		return;
 	}
-	appendToLog("Sending: "+msg+"\n");
+	println("Sending: {}", msg);
 	sendMessage(msg);
 	sendBox.setText("");
 }

@@ -6,6 +6,8 @@
 
 #include "PasswordField.hpp"
 
+#include <fmt/format.h>
+
 class ChatWindow: public gui::Window {
 
 	gui::Text recvBox;
@@ -26,6 +28,7 @@ class ChatWindow: public gui::Window {
 	std::mutex mtx;
 
 	std::queue<std::string> msgBoxQueue;
+	std::deque<std::string> log;
 public:
 
 	void genKeyPair();
@@ -38,7 +41,17 @@ public:
 
 	ChatWindow(al::Coord<> pos, std::shared_ptr<AppState> app);
 	virtual void tick() override;
+
+	void updateLog();
 	void appendToLog(const std::string_view text);
+
+	template<typename... Args>
+	void println(const std::string_view text, Args... args)
+	{
+		appendToLog(fmt::format(text, args...));
+	}
+
+
 	void acknowledgeReceivedMessage(const std::string_view msg);
 	void onSend();
 	void sendMessage(std::string msg);

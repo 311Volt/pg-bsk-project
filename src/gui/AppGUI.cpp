@@ -48,11 +48,11 @@ void AppGUI::initiateChat()
 		appState
 	);
 
-	chatWin->appendToLog(fmt::format(
+	chatWin->println(
 		"Connection initiated with {}:{}\n",
 		appState->theirIPAddress,
 		appState->theirPort
-	));
+	);
 
 	desk.addChild(*chatWin);
 
