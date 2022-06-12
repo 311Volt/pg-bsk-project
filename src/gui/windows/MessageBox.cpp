@@ -15,7 +15,7 @@ MessageBox::MessageBox(al::Coord<> pos, const std::string_view text, const std::
 	addChild(txt);
 	setTitle(std::string(title));
 	give(std::make_unique<gui::TitleBar>());
-	setZIndex(311);
+	setZIndex(-31100);
 
 	ok.setAlignment(gui::Window::ALIGN_CENTER_BOTTOM);
 	addChild(ok);
