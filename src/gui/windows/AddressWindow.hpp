@@ -10,7 +10,7 @@ class AddressWindow: public gui::Window {
 
 	std::function<void(std::string, int)> handler;
 
-	gui::Button connBtn;
+	gui::Button connBtn, connDbg;
 public:
 	AddressWindow(al::Coord<> pos, std::function<void(std::string, int)> handler);
 };
