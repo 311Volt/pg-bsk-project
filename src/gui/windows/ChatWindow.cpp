@@ -136,7 +136,7 @@ void ChatWindow::tryLoadKeyPair(al::FileDialogResult& r)
 	}
 
 	appendToLog(fmt::format(
-		"Key loaded from {}.(key,pub) successfully\n",
+		"Key pair loaded from {}.(key,pub) successfully\n",
 		stdfs::path(kp->pubKeyPath).replace_extension().string()
 	));
 
@@ -151,7 +151,7 @@ void ChatWindow::trySaveKeyPair(al::FileDialogResult& r)
 	}
 	stdfs::path path(r.paths.at(0));
 
-	if(path.extension().string().size() && path.extension() != "*.pub" && path.extension() != "*.key") {
+	if(path.extension().string().size() && path.extension() != ".pub" && path.extension() != ".key") {
 		throw KeyMgrError("{} exists and is not a key", path.string());
 	}
 
@@ -163,7 +163,7 @@ void ChatWindow::trySaveKeyPair(al::FileDialogResult& r)
 	app->SavePublicKey(ppub.string());
 
 	appendToLog(fmt::format(
-		"Current key saved to {}.(key,pub)\n",
+		"Current key pair saved to {}.(key,pub)\n",
 		stdfs::path(path).replace_extension().string()
 	));
 
