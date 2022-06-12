@@ -24,7 +24,6 @@ ChatWindow::ChatWindow(al::Coord<> pos, std::shared_ptr<AppState> app)
 		pfSavePass({200, 24}, {405, 440}),
 		keyText({250, 24}, {370, 380}, "no key data available")
 {
-	bufChanged = true;
 	setTitle(fmt::format("Chat: {}:{}", app->ipAddress, app->port));
 	give(std::make_unique<gui::TitleBar>());
 
@@ -216,11 +215,6 @@ void ChatWindow::tick()
 {
 	std::lock_guard<std::mutex> lk(mtx);
 
-	if(bufChanged) {
-		bufChanged = false;
-		recvBox.setText(buf);
-	}
-
 	while(!msgBoxQueue.empty()) {
 		auto m = msgBoxQueue.back();
 		msgBoxQueue.pop();
@@ -243,6 +237,7 @@ std::string StrMerge(const std::deque<std::string>& deq)
 void ChatWindow::updateLog()
 {
 	recvBox.setText(StrMerge(log));
+	recvBox.updateIfNeeded();
 	while(recvBox.getSpan().height() >= recvBox.getHeight()-10) {
 		log.pop_front();
 		recvBox.setText(StrMerge(log));
@@ -255,6 +250,7 @@ void ChatWindow::appendToLog(const std::string_view text)
 	std::lock_guard<std::mutex> lk(mtx);
 
 	log.push_back(std::string(text));
+
 	updateLog();
 }
 

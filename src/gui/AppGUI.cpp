@@ -48,16 +48,17 @@ void AppGUI::initiateChat()
 		appState
 	);
 
+	desk.addChild(*chatWin);
+
 	chatWin->println(
-		"Connection initiated with {}:{}\n",
+		"Connection initiated with {}:{}",
 		appState->theirIPAddress,
 		appState->theirPort
 	);
 
-	desk.addChild(*chatWin);
-
 	chat = std::make_unique<Chat>(std::move(chatWin), appState);
 	chat->start();
+	
 }
 
 void AppGUI::tryConnect(const std::string& addr, int port)

@@ -21,7 +21,6 @@ class ChatWindow: public gui::Window {
 	gui::Text keyText;
 
 	gui::Button sendBtn;
-	std::string buf;
 	bool bufChanged;
 
 	std::shared_ptr<AppState> app;
