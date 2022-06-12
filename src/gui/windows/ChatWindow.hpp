@@ -4,6 +4,8 @@
 #include <lpg/gui/gui.hpp>
 #include "../../app/AppState.hpp"
 
+#include "PasswordField.hpp"
+
 class ChatWindow: public gui::Window {
 
 	gui::Text recvBox;
@@ -12,6 +14,9 @@ class ChatWindow: public gui::Window {
 	gui::DropdownList encMode;
 
 	gui::Button btnGenKP, btnLoadKP, btnSaveKP;
+	gui::Text lpCaption, spCaption;
+	PasswordField pfLoadPass, pfSavePass;
+	gui::Text keyText;
 
 	gui::Button sendBtn;
 	std::string buf;
@@ -24,8 +29,12 @@ class ChatWindow: public gui::Window {
 public:
 
 	void genKeyPair();
-	void loadKeyPair();
-	void saveKeyPair();
+
+	void tryLoadKeyPair(al::FileDialogResult& r);
+	void trySaveKeyPair(al::FileDialogResult& r);
+
+	void loadKeyPairDialog();
+	void saveKeyPairDialog();
 
 	ChatWindow(al::Coord<> pos, std::shared_ptr<AppState> app);
 	virtual void tick() override;
@@ -33,6 +42,8 @@ public:
 	void acknowledgeReceivedMessage(const std::string_view msg);
 	void onSend();
 	void sendMessage(std::string msg);
+
+	void updateKeyText();
 
 	void queueMsgBox(const std::string& msg);
 };

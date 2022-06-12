@@ -30,11 +30,7 @@ AddressWindow::AddressWindow(al::Coord<> pos, std::function<void(std::string, in
 	txtAddr.setTextAlignment(gui::Window::ALIGN_RIGHT_CENTER);
 	txtPort.setTextAlignment(gui::Window::ALIGN_RIGHT_CENTER);
 	
-	addChild(txtAddr);
-	addChild(txtPort);
-	addChild(inAddr);
-	addChild(inPort);
-	addChild(connBtn);
+	addChildren({txtAddr, txtPort, inAddr, inPort, connBtn});
 
 #ifndef NDEBUG
 	addChild(connDbg);

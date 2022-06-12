@@ -12,11 +12,11 @@ MessageBox::MessageBox(al::Coord<> pos, const std::string_view text, const std::
 
 	txt.setTextAlignment(gui::Window::ALIGN_CENTER);
 
-	addChild(txt);
 	setTitle(std::string(title));
 	give(std::make_unique<gui::TitleBar>());
 	setZIndex(-31100);
 
 	ok.setAlignment(gui::Window::ALIGN_CENTER_BOTTOM);
-	addChild(ok);
+
+	addChildren({txt, ok});
 }
