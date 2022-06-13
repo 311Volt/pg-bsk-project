@@ -28,29 +28,35 @@
 
 class Filestate {
 public:
-	Filestate(std::string fileName, size_t size);
+	Filestate(void* hash, std::string fileName, size_t size);
 	Filestate(std::string fileName);
-	~Filestate() = default;
+	~Filestate();
 	
 	int32_t UpdateReceive(const void* data, size_t bytes);
 	
-	inline bool Valid() const { return file.good(); }
+	inline bool Valid() const { return file; }
 	inline size_t Size() const { return size; }
 	
 	Future<int32_t> UpdateSend();
 	Future<uint32_t> SendMeta();
 	
+	void FileDigest(void* digest);
+	
 	float GetProgress();
+	
+	std::shared_ptr<Filestate> self;
 	
 private:
 	
-	inline const static size_t BLOCK_SIZE = 16;
+	inline const static size_t BLOCK_SIZE = 4096;
 	
 	size_t size;
 	std::atomic<size_t> progress;
 	
-	std::fstream file;
+	FILE* file;
 	std::string fileName;
+	std::array<uint8_t, 32> hash;
+	digest::sha256 sha;
 };
 
 #endif

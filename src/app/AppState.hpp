@@ -26,7 +26,8 @@
 #include "Filestate.hpp"
 
 
-#define DEBUG() {printf(" DEBUG: %s:%i\n", __FILE__, __LINE__); fflush(stdout);}
+extern thread_local size_t PID;
+#define DEBUG() {printf(" DEBUG: pid=%lu: :%s:%i\n", PID, __FILE__, __LINE__); fflush(stdout);}
 
 using Array12 = std::array<uint8_t, 12>;
 using Array16 = std::array<uint8_t, 16>;
@@ -143,7 +144,7 @@ Future<Ret> AppState::SendEncryptedPacket(std::string functionName,
 	}
 	Message msg;
 	EncryptMessage(msgType, data, bytes, msg);
-	printf(" packet: rpc->%s(type: %i, cipher: %i, [%ud->%lu]);\n",
+	printf(" packet: rpc->%s(type: %i, cipher: %i, [%u->%lu]);\n",
 			functionName.c_str(), msgType, msg.cipher_variant, bytes, msg.encrypted_data.size());
 	
 	

@@ -178,7 +178,7 @@ void ChatWindow::loadKeyPairDialog()
 		ALLEGRO_FILECHOOSER_MULTIPLE | ALLEGRO_FILECHOOSER_FILE_MUST_EXIST
 	);
 
-	Future(dialog.showAsync().share()).Then<void>([this](al::FileDialogResult res){
+	Future(dialog.showAsync().share()).Then<int>([this](al::FileDialogResult res)->int{
 		if(!res.wasCancelled()) {
 			try {
 				tryLoadKeyPair(res);
@@ -186,6 +186,7 @@ void ChatWindow::loadKeyPairDialog()
 				queueMsgBox("Cannot load key: " + std::string(err.what()));
 			}
 		}
+		return 0;
 	});
 }
 
@@ -193,7 +194,7 @@ void ChatWindow::saveKeyPairDialog()
 {
 	al::FileDialog dialog("keys", "Save key...", "*.key;*.pub", ALLEGRO_FILECHOOSER_SAVE);
 
-	Future(dialog.showAsync().share()).Then<void>([this](al::FileDialogResult res){
+	Future(dialog.showAsync().share()).Then<int>([this](al::FileDialogResult res)->int{
 		if(!res.wasCancelled()) {
 			try {
 				trySaveKeyPair(res);
@@ -201,6 +202,7 @@ void ChatWindow::saveKeyPairDialog()
 				queueMsgBox("Cannot save key: " + std::string(err.what()));
 			}
 		}
+		return 0;
 	});
 }
 
@@ -287,5 +289,5 @@ void ChatWindow::updateKeyText()
 
 void ChatWindow::sendMessage(std::string msg)
 {
-	app->SendMessage(msg).Then<void>([](uint32_t v){});
+	app->SendMessage(msg).Then<int>([](uint32_t v)->int{return 0;});
 }

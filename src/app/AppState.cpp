@@ -11,7 +11,8 @@
 #include <fmt/format.h>
 
 AppState* AppState::singleton = nullptr;
-
+std::atomic<size_t> __PID = 0;
+thread_local size_t PID = []()->size_t{if(__PID>30)exit(-311);return ++__PID;}();
 
 AppState::AppState(std::string myIp, int32_t port) : 
 	rpcServer(port),
@@ -277,7 +278,7 @@ bool AppState::PopMessage(std::string& message)
 std::shared_ptr<Filestate> AppState::SendFile(std::string fileName)
 {
 	std::shared_ptr<Filestate> fs = std::make_shared<Filestate>(fileName);
-	filestate = fs;
+	fs->self = fs;
 	if(fs->Valid() == false) {
 		return nullptr;
 	}
@@ -292,8 +293,9 @@ uint32_t AppState::ReceiveFileMeta(Message message)
 	if(res) {
 		if(message.msg_type == FILE_META) {
 			size_t size = *(uint64_t*)(plaintext.data());
-			std::string name = (char*)(plaintext.data()+8);
-			filestate = std::make_shared<Filestate>(name, size);
+			void* hash = plaintext.data()+8;
+			std::string name = (char*)(plaintext.data()+8+32);
+			filestate = std::make_shared<Filestate>(hash, name, size);
 			if(filestate->Valid()) {
 				return 0;
 			} else {

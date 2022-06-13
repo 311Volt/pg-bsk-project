@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <array>
+#include <istream>
 
 #include "Random.hpp"
 #include "../../dpp/digestpp/digestpp.hpp"
@@ -85,6 +86,29 @@ namespace digest {
 		inline sha& absorb(const std::array<T, N>& arr) {
 			for(T v : arr)
 				absorb(v);
+			return *this;
+		}
+		template<typename T>
+		inline sha& absorb_istream(T& is) {
+			const uint32_t size = 4096;
+			uint8_t buffer[size];
+			while(true) {
+				int read = is.readsome((char*)buffer, size);
+				if(read == 0)
+					break;
+				absorb(buffer, read);
+			}
+			return *this;
+		}
+		inline sha& absorb_file(FILE* f) {
+			const uint32_t size = 4096;
+			uint8_t buffer[size];
+			while(!feof(f)) {
+				int read = fread(buffer, 1, size, f);
+				if(read == 0)
+					break;
+				absorb(buffer, read);
+			}
 			return *this;
 		}
 		inline void finalize(void* digest/*[bytes]*/) const {
