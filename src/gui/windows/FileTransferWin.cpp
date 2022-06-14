@@ -11,7 +11,7 @@ FileTransferWin::FileTransferWin(const al::Coord<> pos, ChatWindow* cw, FileTran
 	  cWin(cw),
 	  transfer(tr),
 	  progBar({150, 20}, {0, 55}),
-	  btnAccept({80, 24}, {0, -40}, "Accept"),
+	  btnAccept({80, 24}, {0, -10}, "Accept"),
 	  status({250, 40}, {5, 5}, "Waiting...")
 {
 	needsUpdate = false;

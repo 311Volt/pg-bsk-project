@@ -43,6 +43,16 @@ bool FileTransfer::isDone()
 	return bytesCompleted() >= bytesTotal();
 }
 
+bool FileTransfer::isDone1()
+{
+	static bool state = true;
+	if(state && isDone()) {
+		state = false;
+		return true;
+	}
+	return false;
+}
+
 void FileTransfer::invoke(CallbackT cb)
 {
 	std::lock_guard<std::mutex> lock(mtx);
@@ -198,7 +208,7 @@ int FileTransferSend::sendBlock(size_t num)
 	auto f = app->SendEncryptedPacket<int>("FileBlock", FILE_BLOCK, blockRaw.data(), blockRaw.size());
 
 
-	if(isDone() && app->fileFinishCallback) {
+	if(isDone1() && app->fileFinishCallback) {
 		inFile.close();
 		app->fileFinishCallback(app);
 	}
@@ -287,7 +297,7 @@ int FileTransferRecv::receiveBlock(const MsgFileBlock& block)
 	invoke(onUpdate);
 
 
-	if(isDone() && app->fileFinishCallback) {
+	if(isDone1() && app->fileFinishCallback) {
 		outFile.close();
 		app->fileFinishCallback(app);
 	}

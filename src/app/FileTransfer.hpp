@@ -32,6 +32,7 @@ public:
 	virtual size_t bytesCompleted() const = 0;
 	virtual std::string fileName() const = 0;
 	bool isDone();
+	bool isDone1();
 	size_t bytesTotal() const;
 
 	size_t getNumBlocks() const;
