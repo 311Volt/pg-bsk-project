@@ -2,6 +2,8 @@
 #include <app/AppState.hpp>
 #include <gui/AppGUI.hpp>
 
+#include <app/FileMessages.hpp>
+
 #include <chrono>
 #include <thread>
 #include <iostream>
@@ -19,6 +21,12 @@ int main(int argc, char** argv)
 	std::set_terminate(al::Terminate);
 
 	al::Display disp(1024, 768, 0, {}, {{ALLEGRO_VSYNC,1}}, {});
+
+	MsgFileMeta mfm;
+	mfm.filename = "dupa xD";
+	mfm.size = 9000;
+	mfm.blockSize = 0xFF0000000000LL;
+	mfm.sha256.fill(0);
 	
 	gui::Window::RM.registerDefaultLoaders();
 	gui::Window::RM.loadFromConfig(al::Config("gui/default.ini"));

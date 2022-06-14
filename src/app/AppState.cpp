@@ -43,6 +43,10 @@ void AppState::BindAll()
 		return singleton->ReceiveKex(msg);
 	});
 
+	rpcServer.bind("FileTransferAccept", [](Message msg)->int32_t {
+		return singleton->ReceiveFileTransferAccept(msg);
+	});
+
 	rpcServer.bind("FileMeta", [](Message msg)->uint32_t{
 		return singleton->ReceiveFileMeta(msg);
 	});
@@ -244,6 +248,7 @@ KexMessage AppState::ReceiveKex(KexMessage kexReceived)
 
 	if(onReceiveKex)
 		onReceiveKex();
+	
 	return kex;
 }
 
@@ -287,9 +292,40 @@ bool AppState::PopMessage(std::string& message)
 	return true;
 }
 
-
-std::shared_ptr<Filestate> AppState::SendFile(std::string fileName)
+int32_t AppState::ReceiveFileTransferAccept(Message message)
 {
+	if(auto* tr = dynamic_cast<FileTransferSend*>(fileTransfer.get())) {
+		return tr->ackAccept();
+	}
+	return -1;
+}
+
+FileTransfer* AppState::getFileTransferState()
+{
+	return fileTransfer.get();
+}
+
+void AppState::SetFileTransferInitCallback(std::function<void (AppState *)> cb)
+{
+	fileInitCallback = cb;
+}
+
+void AppState::SetFileTransferFinishCallback(std::function<void (AppState *)> cb)
+{
+	fileFinishCallback = cb;
+}
+
+void AppState::SendFile(std::string fileName)
+{
+	auto* tr = new FileTransferSend(fileName, this);
+	fileTransfer.reset(tr);
+
+	tr->sendMeta();
+
+	if(fileInitCallback) {
+		fileInitCallback(this);
+	}
+	/*
 	std::shared_ptr<Filestate> fs = std::make_shared<Filestate>(fileName);
 	fs->self = fs;
 	if(fs->Valid() == false) {
@@ -297,10 +333,26 @@ std::shared_ptr<Filestate> AppState::SendFile(std::string fileName)
 	}
 	fs->SendMeta();
 	return fs;
+	*/
 }
 
 uint32_t AppState::ReceiveFileMeta(Message message)
 {
+	
+	std::vector<uint8_t> raw;
+	bool res = DecryptMessage(message, raw);
+	if(!res) {
+		return -1;
+	}
+	MsgFileMeta fileMeta(raw);
+
+	fileTransfer.reset(new FileTransferRecv(fileMeta, this));
+	if(fileInitCallback) {
+		fileInitCallback(this);
+	}
+	
+	return 0;
+	/*
 	std::vector<uint8_t> plaintext;
 	bool res = DecryptMessage(message, plaintext);
 	if(res) {
@@ -318,10 +370,26 @@ uint32_t AppState::ReceiveFileMeta(Message message)
 		}
 	}
 	return 2;
+	*/	
 }
 
 int32_t AppState::ReceiveFileBlock(Message message)
 {
+	
+	if(auto* recv = dynamic_cast<FileTransferRecv*>(fileTransfer.get())) {
+		std::vector<uint8_t> raw;
+		bool res = DecryptMessage(message, raw);
+		if(!res) {
+			return -2;
+		}
+		MsgFileBlock fileBlock(raw);
+
+		return recv->receiveBlock(fileBlock);
+	} else {
+		return -1;
+	}
+
+	/*
 	std::vector<uint8_t> plaintext;
 	bool res = DecryptMessage(message, plaintext);
 	if(res) {
@@ -333,6 +401,7 @@ int32_t AppState::ReceiveFileBlock(Message message)
 		}
 	}
 	return -2;
+	*/
 }
 
 

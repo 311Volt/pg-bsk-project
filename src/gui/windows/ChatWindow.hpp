@@ -5,10 +5,12 @@
 #include "../../app/AppState.hpp"
 
 #include "PasswordField.hpp"
+#include "FileTransferWin.hpp"
 
 #include <fmt/format.h>
 
 class AppGUI;
+class FileTransferWin;
 
 class ChatWindow: public gui::Window {
 
@@ -18,8 +20,10 @@ class ChatWindow: public gui::Window {
 	gui::TextBox sendBox;
 
 	gui::DropdownList encMode;
+	std::unique_ptr<FileTransferWin> ftWin;
 
 	gui::Button sendBtn;
+	gui::Button sendFileBtn;
 	bool bufChanged;
 
 	std::mutex mtx;
@@ -28,8 +32,10 @@ class ChatWindow: public gui::Window {
 public:
 
 	ChatWindow(al::Coord<> pos, AppGUI* gui);
+	~ChatWindow();
 	virtual void tick() override;
 
+	void sendFileDialog();
 	void updateLog();
 	void appendToLog(const std::string_view text);
 

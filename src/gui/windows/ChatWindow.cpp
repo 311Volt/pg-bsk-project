@@ -7,6 +7,7 @@
 #include <filesystem>
 
 #include "../AppGUI.hpp"
+#include "FileTransferWin.hpp"
 
 
 ChatWindow::ChatWindow(al::Coord<> pos, AppGUI* gui)
@@ -15,7 +16,8 @@ ChatWindow::ChatWindow(al::Coord<> pos, AppGUI* gui)
 		sendBox({570, 20}, {20, 340}),
 		sendBtn({30, 20}, {590, 340}, "Send"),
 		gui(gui),
-		encMode({200, 20}, {20, 380}, {200, 100})
+		encMode({200, 20}, {20, 380}, {200, 100}),
+		sendFileBtn({80, 24}, {20, 410}, "Send file...")
 {
 	setTitle(fmt::format("Chat: {}:{}", gui->app()->ipAddress, gui->app()->port));
 	give(std::make_unique<gui::TitleBar>());
@@ -43,22 +45,51 @@ ChatWindow::ChatWindow(al::Coord<> pos, AppGUI* gui)
 		}
 	});
 
+	gui->app()->SetFileTransferInitCallback([this](AppState* app){
+		ftWin = std::make_unique<FileTransferWin>(
+			al::Coord<>{240, 380},
+			this,
+			app->getFileTransferState()
+		);
+		this->addChild(*ftWin);
+	});
+	gui->app()->SetFileTransferFinishCallback([this](AppState* app){
+		ftWin->onFinish();
+		ftWin->visible = false;
+	});
+
+	sendFileBtn.setCallback([this](){
+		sendFileDialog();
+	});
 
 	addChildren({
 		recvBox, sendBox, sendBtn,
-		encMode
+		encMode, sendFileBtn
 	});
 
 	updateLog();
 }
 
 
-
+ChatWindow::~ChatWindow()
+{
+	gui->app()->SetFileTransferInitCallback([](AppState*){});
+}
 
 void ChatWindow::tick()
 {
 	std::lock_guard<std::mutex> lk(mtx);
 	Window::tick();
+}
+
+void ChatWindow::sendFileDialog()
+{
+	al::FileDialog dlg(".", "Choose a file to send", "*.*", ALLEGRO_FILECHOOSER_FILE_MUST_EXIST);
+
+	auto r = dlg.show();
+	if(!r.wasCancelled()) {
+		gui->app()->SendFile(r.paths.at(0));
+	}
 }
 
 std::string StrMerge(const std::deque<std::string>& deq)

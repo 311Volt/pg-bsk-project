@@ -102,6 +102,7 @@ void AppGUI::run()
 void AppGUI::tick()
 {
 	std::lock_guard<std::mutex> lk(mtx);
+	
 	while(!msgBoxQueue.empty()) {
 		al::Coord<unsigned> offset;
 		Random::Fill(&offset, sizeof(offset));

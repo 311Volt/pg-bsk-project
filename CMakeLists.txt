@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.4.0)
 project(pg-bsk-project VERSION 0.1.0)
 
-set(CMAKE_CXX_FLAGS "-std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
 file(GLOB_RECURSE portable8439_sources "portable8439/src/*.c")
 file(GLOB_RECURSE app_sources "src/*.cpp" "src/*.c")

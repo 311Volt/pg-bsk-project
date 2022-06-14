@@ -22,11 +22,14 @@
 
 #include "Codes.hpp"
 #include "FuturePromise.hpp"
-#include "Filestate.hpp"
+#include "FileTransfer.hpp"
 
 
 extern thread_local size_t PID;
 #define DEBUG() {printf(" DEBUG: pid=%lu: :%s:%i\n", PID, __FILE__, __LINE__); fflush(stdout);}
+
+
+using CallbackT = std::function<void(void)>;
 
 using Array12 = std::array<uint8_t, 12>;
 using Array16 = std::array<uint8_t, 16>;
@@ -91,10 +94,15 @@ public:
 	void PushMessage(const std::string& message);
 	bool PopMessage(std::string& message);
 	
-	std::shared_ptr<Filestate> SendFile(std::string fileName);
+	void SendFile(std::string fileName);
 	uint32_t ReceiveFileMeta(Message message);
 	int32_t ReceiveFileBlock(Message message);
+	int32_t ReceiveFileTransferAccept(Message message);
+	void AcceptFileTransfer();
 	
+	FileTransfer* getFileTransferState();
+	void SetFileTransferInitCallback(std::function<void(AppState*)> cb);
+	void SetFileTransferFinishCallback(std::function<void(AppState*)> cb);
 public:
 	
 	void EncryptMessage(MSG_TYPE type, const void* plaintext, size_t length,
@@ -110,7 +118,9 @@ public:
 			const void* ad, size_t adLength, ENCRYPTION_MODE encryptionMode);
 	
 public:
+	friend class FileTransfer;
 	
+	std::function<void(AppState*)> fileInitCallback, fileFinishCallback;
 	ENCRYPTION_MODE currentEncryptionMode;
 	
 	rpc::server rpcServer;
@@ -121,7 +131,9 @@ public:
 	Array32 sharedKey;
 	EcPublicKey theirPublicKey;
 	
-	std::shared_ptr<Filestate> filestate;
+	//std::shared_ptr<Filestate> filestate;
+
+	std::unique_ptr<FileTransfer> fileTransfer;
 	
 	std::queue<std::string> receivedMessages;
 	std::mutex mutex;
@@ -145,8 +157,11 @@ Future<Ret> AppState::SendEncryptedPacket(std::string functionName,
 	}
 	Message msg;
 	EncryptMessage(msgType, data, bytes, msg);
+
+	/*
 	printf(" packet: rpc->%s(type: %i, cipher: %i, [%u->%lu]);\n",
 			functionName.c_str(), msgType, msg.cipher_variant, bytes, msg.encrypted_data.size());
+	*/
 	
 	
 	std::shared_future<clmdep_msgpack::v1::object_handle> future =
