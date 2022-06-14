@@ -20,13 +20,7 @@ int main(int argc, char** argv)
 	srand(std::hash<double>()(al::GetTime()));
 	std::set_terminate(al::Terminate);
 
-	al::Display disp(1024, 768, 0, {}, {{ALLEGRO_VSYNC,1}}, {});
-
-	MsgFileMeta mfm;
-	mfm.filename = "dupa xD";
-	mfm.size = 9000;
-	mfm.blockSize = 0xFF0000000000LL;
-	mfm.sha256.fill(0);
+	al::Display disp(800, 600, 0, {}, {{ALLEGRO_VSYNC,1}}, {});
 	
 	gui::Window::RM.registerDefaultLoaders();
 	gui::Window::RM.loadFromConfig(al::Config("gui/default.ini"));
