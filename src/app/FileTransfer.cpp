@@ -103,7 +103,7 @@ void FileTransferSend::workerLoop()
 		if(!blk) {
 			break;
 		}
-		fmt::print("sending block {}\n",blk.value());
+		//fmt::print("sending block {}\n",blk.value());
 		bool succ = false;
 		while(!succ) {
 			succ = sendBlock(blk.value()) == 0;
@@ -152,7 +152,7 @@ int FileTransferSend::sendMeta()
 		MsgFileMeta meta;
 		meta.blockSize = blockSize;
 		meta.size = fileSize;
-		meta.filename = stdfs::path(inputPath).filename();
+		meta.filename = stdfs::path(inputPath).filename().string();
 
 		auto hash = digest::sha256();
 

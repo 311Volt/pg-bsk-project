@@ -19,7 +19,7 @@ void Random::Fill(void* ptr, size_t size)
 }
 
 
-#elif defined(WIN32)
+#elif defined(_WIN32)
 
 //****NOT TESTED****
 
@@ -54,7 +54,7 @@ void Random::Fill(void* ptr, size_t size)
 {
 	static RandomContext ctx;
 
-	CryptGenRandom(ctx.hCryptProv, size, ptr);
+	CryptGenRandom(ctx.hCryptProv, size, (BYTE*)ptr);
 }
 
 #else

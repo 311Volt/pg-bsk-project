@@ -7,6 +7,11 @@ file(GLOB_RECURSE portable8439_sources "portable8439/src/*.c")
 file(GLOB_RECURSE app_sources "src/*.cpp" "src/*.c")
 add_library(portable8439_bsk STATIC ${portable8439_sources})
 
+if(WIN32)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
+endif()
+
 include("secp256k1_bsk.cmake")
 
 add_subdirectory("rpclib")
