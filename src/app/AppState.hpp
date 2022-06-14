@@ -18,7 +18,6 @@
 #include <rpc/rpc_error.h>
 #include <rpc/msgpack/v1/object.hpp>
 
-#include <fmt/format.h>
 
 
 #include "Codes.hpp"
@@ -74,6 +73,8 @@ public:
 	bool SavePrivateKey(std::string keyFilePath, const std::string& passphrase) const;
 	bool LoadPublicKey(std::string keyFilePath);
 	bool SavePublicKey(std::string keyFilePath) const;
+
+	std::string GetKeyFingerprint() const;
 	
 	KexMessage ReceiveKex(KexMessage kex);
 	void SetReceiveKexCallback(std::function<void(void)> fn);
@@ -140,7 +141,7 @@ template<typename Ret>
 Future<Ret> AppState::SendEncryptedPacket(std::string functionName,
 		MSG_TYPE msgType, void* data, uint32_t bytes) {
 	if(!client) {
-		throw SendEncryptedPacketFailed(fmt::format("Failed to send encrypted packet due to NULL value of AppState::client"));
+		throw SendEncryptedPacketFailed("Failed to send encrypted packet due to NULL value of AppState::client");
 	}
 	Message msg;
 	EncryptMessage(msgType, data, bytes, msg);

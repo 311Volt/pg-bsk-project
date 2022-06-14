@@ -26,6 +26,19 @@
 #include "FuturePromise.hpp"
 #include "rpc/msgpack/v1/object.hpp"
 
+
+struct MsgFileMeta {
+	std::string filename;
+	std::array<uint8_t, 32> sha256;
+	uint64_t size;
+};
+
+struct MsgFileBlock {
+	uint64_t offset;
+	std::vector<uint8_t> data;
+	uint32_t crc32;
+};
+
 class Filestate {
 public:
 	Filestate(void* hash, std::string fileName, size_t size);

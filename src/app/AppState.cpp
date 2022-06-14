@@ -144,6 +144,19 @@ bool AppState::SavePublicKey(std::string keyFilePath) const {
 	return false;
 }
 
+std::string AppState::GetKeyFingerprint() const
+{
+	Array32 privKeyHash;
+	digest::sha256().absorb(privateKey).finalize(privKeyHash.data());
+
+	std::string fingerprint;
+	for(uint8_t b: privKeyHash) {
+		fingerprint += fmt::format("{:02x}", b);
+	}
+
+	return fingerprint;
+}
+
 ERROR_CODE AppState::ConnectAndHandshake(std::string ip, int32_t port) 
 {
 	auto newClient = std::make_unique<rpc::client>(ip, port);
