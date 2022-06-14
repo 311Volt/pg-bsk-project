@@ -31,13 +31,56 @@ struct MsgFileMeta {
 	std::string filename;
 	std::array<uint8_t, 32> sha256;
 	uint64_t size;
+	uint64_t blockSize;
+
+	MSGPACK_DEFINE_ARRAY(filename, sha256, size, blockSize);
+
+
 };
 
 struct MsgFileBlock {
 	uint64_t offset;
+	uint64_t checksum;
 	std::vector<uint8_t> data;
-	uint32_t crc32;
+
+	MSGPACK_DEFINE_ARRAY(offset, checksum, data);
 };
+
+
+class FileTransfer {
+	uint64_t transferId;
+	bool awaitingAccept;
+	size_t blockSize;
+public:
+	FileTransfer();
+
+	virtual size_t bytesCompleted() = 0;
+	virtual size_t bytesTotal() = 0;
+};
+
+class FileTransferSend: public FileTransfer {
+	std::string inputPath;
+	std::ifstream inFile;
+	std::vector<int> blockStatus;
+public:
+	FileTransferSend(const std::string_view filename);
+
+	int sendBlock();
+};
+
+class FileTransferRecv: public FileTransfer {
+	std::string outputPath;
+	std::ofstream outFile;
+	std::array<uint8_t, 32> sha256;
+	size_t blockSize;
+public:
+	FileTransferRecv(const MsgFileMeta& meta);
+
+	bool acceptTransfer();
+
+	int receiveBlock(const MsgFileBlock& block);
+};
+
 
 class Filestate {
 public:

@@ -14,7 +14,6 @@ KeyManager::KeyManager(const al::Coord<> pos, AppGUI* gui)
 		pfLoadPass({200, 24}, {175, 55}),
 		pfSavePass({200, 24}, {175, 85}),
 		keyText({250, 24}, {140, 25}, "no key data available")
-
 {
 
 	setTitle("Key Manager");
@@ -149,32 +148,28 @@ void KeyManager::loadKeyPairDialog()
 		ALLEGRO_FILECHOOSER_MULTIPLE | ALLEGRO_FILECHOOSER_FILE_MUST_EXIST
 	);
 	
-	Future(dialog.showAsync().share()).Then<int>([this](al::FileDialogResult res)->int{
-		if(!res.wasCancelled()) {
-			try {
-				tryLoadKeyPair(res);
-			} catch(KeyMgrError& err) {
-				gui->msgBox("Cannot load key: " + std::string(err.what()));
-			}
+	auto res = dialog.show();
+	if(!res.wasCancelled()) {
+		try {
+			tryLoadKeyPair(res);
+		} catch(KeyMgrError& err) {
+			gui->msgBox("Cannot load key: " + std::string(err.what()));
 		}
-		return 0;
-	});
+	}
 }
 
 void KeyManager::saveKeyPairDialog()
 {
 	al::FileDialog dialog("keys", "Save key...", "*.key;*.pub", ALLEGRO_FILECHOOSER_SAVE);
 
-	Future(dialog.showAsync().share()).Then<int>([this](al::FileDialogResult res)->int{
-		if(!res.wasCancelled()) {
-			try {
-				trySaveKeyPair(res);
-			} catch(KeyMgrError& err) {
-				gui->msgBox("Cannot save key: " + std::string(err.what()));
-			}
+	auto res = dialog.show();
+	if(!res.wasCancelled()) {
+		try {
+			trySaveKeyPair(res);
+		} catch(KeyMgrError& err) {
+			gui->msgBox("Cannot save key: " + std::string(err.what()));
 		}
-		return 0;
-	});
+	}
 }
 
 void KeyManager::updateKeyText()

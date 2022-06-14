@@ -127,7 +127,7 @@ private:
 
 inline Future<void> Future<void>::Then(std::function<void(void)> callback) {
 	if(argFuture.valid()) {
-		/*std::shared_ptr<Promise<void>> p = std::make_shared<Promise<void>>();
+		std::shared_ptr<Promise<void>> p = std::make_shared<Promise<void>>();
 		auto pr = argFuture;
 		std::thread t([callback, p, pr]() {
 			pr.wait();
@@ -135,13 +135,13 @@ inline Future<void> Future<void>::Then(std::function<void(void)> callback) {
 			p->SetValue();
 		});
 		t.detach();
-		return p->GetFuture();*/
+		return p->GetFuture();
 		
-		return std::async(std::launch::async,
+		/*return std::async(std::launch::async,
 				[callback](std::shared_future<void> arg)->void {
 				arg.wait();
 				return callback();
-				}, argFuture).share();
+				}, argFuture).share();*/
 				
 	} else {
 		throw FuturePromiseException("Future<>::Then<>()::else is not implemented.");
@@ -154,20 +154,20 @@ inline Future<void> Future<void>::Then(std::function<void(void)> callback) {
 template<typename Ret>
 inline Future<Ret> Future<void>::Then(std::function<Ret(void)> callback) {
 	if(argFuture.valid()) {
-		/*std::shared_ptr<Promise<Ret>> p = std::make_shared<Promise<Ret>>();
+		std::shared_ptr<Promise<Ret>> p = std::make_shared<Promise<Ret>>();
 		auto pr = argFuture;
 		std::thread t([callback, p, pr]() {
 			pr.wait();
 			p->SetValue(callback());
 		});
 		t.detach();
-		return p->GetFuture();*/
+		return p->GetFuture();
 		
-		return std::async(std::launch::async,
+		/*return std::async(std::launch::async,
 				[callback](std::shared_future<void> arg)->Ret {
 				arg.wait();
 				return callback();
-				}, argFuture).share();
+				}, argFuture).share();*/
 				
 	} else {
 		throw FuturePromiseException("Future<>::Then<>()::else is not implemented.");
@@ -181,19 +181,19 @@ template<typename Arg>
 template<typename Ret>
 inline Future<Ret> Future<Arg>::Then(std::function<Ret(Arg)> callback) {
 	if(argFuture.valid()) {
-		/*std::shared_ptr<Promise<Ret>> p = std::make_shared<Promise<Ret>>();
+		std::shared_ptr<Promise<Ret>> p = std::make_shared<Promise<Ret>>();
 		auto pr = argFuture;
 		std::thread t([callback, p, pr]() {
 				pr.wait();
 				p->SetValue(callback(pr.get()));
 				});
 		t.detach();
-		return p->GetFuture();*/
+		return p->GetFuture();
 		
-		return std::async(std::launch::async,
+		/*return std::async(std::launch::async,
 				[callback](std::shared_future<Arg> arg)->Ret {
 				return callback(arg.get());
-				}, argFuture).share();
+				}, argFuture).share();*/
 				
 	} else {
 		throw FuturePromiseException("Future<>::Then<>()::else is not implemented.");
@@ -206,7 +206,7 @@ inline Future<Ret> Future<Arg>::Then(std::function<Ret(Arg)> callback) {
 template<typename Arg>
 inline Future<void> Future<Arg>::Then(std::function<void(Arg)> callback) {
 	if(argFuture.valid()) {
-		/*std::shared_ptr<Promise<void>> p = std::make_shared<Promise<void>>();
+		std::shared_ptr<Promise<void>> p = std::make_shared<Promise<void>>();
 		auto pr = argFuture;
 		std::thread t([callback, p, pr]() {
 				pr.wait();
@@ -214,12 +214,12 @@ inline Future<void> Future<Arg>::Then(std::function<void(Arg)> callback) {
 				p->SetValue();
 				});
 		t.detach();
-		return p->GetFuture();*/
+		return p->GetFuture();
 		
-		return std::async(std::launch::async,
+		/*return std::async(std::launch::async,
 				[callback](std::shared_future<Arg> arg)->void {
 				return callback(arg.get());
-				}, argFuture).share();
+				}, argFuture).share();*/
 		
 	} else {
 		throw FuturePromiseException("Future<>::Then<>()::else is not implemented.");
