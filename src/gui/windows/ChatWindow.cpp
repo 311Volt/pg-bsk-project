@@ -17,7 +17,8 @@ ChatWindow::ChatWindow(al::Coord<> pos, AppGUI* gui)
 		sendBtn({30, 20}, {590, 340}, "Send"),
 		gui(gui),
 		encMode({200, 20}, {20, 380}, {200, 100}),
-		sendFileBtn({80, 24}, {20, 410}, "Send file...")
+		sendFileBtn({80, 24}, {20, 410}, "Send file..."),
+		bufChanged(false)
 {
 	setTitle(fmt::format("Chat: {}:{}", gui->app()->ipAddress, gui->app()->port));
 	give(std::make_unique<gui::TitleBar>());
@@ -79,6 +80,12 @@ ChatWindow::~ChatWindow()
 void ChatWindow::tick()
 {
 	std::lock_guard<std::mutex> lk(mtx);
+
+	if(bufChanged) {
+		updateLog();
+		bufChanged = false;
+	}
+
 	Window::tick();
 }
 
@@ -118,7 +125,7 @@ void ChatWindow::appendToLog(const std::string_view text)
 
 	log.push_back(std::string(text));
 
-	updateLog();
+	bufChanged = true;
 }
 
 void ChatWindow::acknowledgeReceivedMessage(const std::string_view msg)
